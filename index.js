@@ -9,14 +9,12 @@ var LabelFactory = require('./src/factories/LabelFactory');
 // var colorPalette = colors[49];
 var colorPalette = colors[~~(colors.length * Math.random())];
 colorPalette = colorPalette.map(function strToColor(colorStr) {
-	return new three.Color(colorStr);
+	return new three.Color(0, 0, 0);
 });
-
-colorPalette.unshift(colorPalette.splice(2, 1)[0]);
 
 
 if(urlparam('break', -1) === -1 || urlparam('work', -1) === -1) {
-	window.location.href = window.location.protocol + '//' + window.location.host + '?work=15&break=5&black=false';
+	window.location.href = window.location.protocol + '//' + window.location.host + window.location.pathname + '?work=15&break=5&black=false';
 }
 var durationBreakSession = urlparam('break', 5) * 60;
 var durationWorkSession = urlparam('work', 15) * 60;
@@ -28,11 +26,16 @@ function mapHexToColors(hex) {
 	return new three.Color(hex);
 }
 
+
+colorPalette.unshift(colorPalette.splice(2, 1)[0]);
+workColors.unshift(workColors.splice(2, 1)[0]);
+breakColors.unshift(breakColors.splice(2, 1)[0]);
+
 //projector mode looks best on black background
 if(urlparam('black', false)) {
 	colorPalette[0].setRGB(0, 0, 0);
-	workColors.unshift(workColors.splice(2, 1)[0]);
-	breakColors.unshift(breakColors.splice(2, 1)[0]);
+	workColors[0] = 0x000000;
+	breakColors[0] = 0x000000;
 }
 
 var scheduleChunk = [
@@ -167,12 +170,17 @@ function onEnterFrame() {
 		activityLabel.geometry.recenter();
 		timerRings[timerRings.length-1].durationMs = schedule[0].durationMs;
 		for (var i = 0; i < colorPalette.length; i++) {
+			function onUpdateBGColor() {
+				view.renderer.setClearColor(colorPalette[0], 1);
+			}
 			tweener.to(colorPalette[i], 1, {
 				r: schedule[0].colors[i].r,
 				g: schedule[0].colors[i].g,
-				b: schedule[0].colors[i].b
+				b: schedule[0].colors[i].b,
+				onUpdate: i === 0 ? onUpdateBGColor : undefined
 			});
 		}
+
 		// if(activityLabel) {
 		// 	tweener.to(activityLabel.material.uniforms.color.value, 1, {
 		// 		r: schedule[0].colors[4].r,

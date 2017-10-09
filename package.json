@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "budo index.js --live --open -- -t glslify",
-    "build": "browserify index.js -o bundle.js && uglifyjs bundle.js -m -c -o bundle.min.js"
+    "build": "browserify -t glslify index.js -o bundle.js && uglifyjs bundle.js -m -c -o bundle.min.js"
   },
   "keywords": [],
   "repository": {
