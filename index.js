@@ -146,7 +146,7 @@ function onResize(w, h) {
 	}
 	if(activityLabel) {
 		activityLabel.scale.set(s * 0.0013, sy * 0.0013, s * 0.0013);
-		activityLabel.position.set(w * 0.5, s * 0.44, 0);
+		activityLabel.position.set(w * 0.5, h * 0.5 - s * 0.12, 0);
 	}
 };
 
