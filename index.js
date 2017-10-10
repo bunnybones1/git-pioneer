@@ -2,10 +2,12 @@ var three = require('three');
 window.THREE = three;
 var ManagedView = require('threejs-managed-view');
 var urlparam = require('urlparam');
-var colors = require('nice-color-palettes');
+var colors = require('nice-color-palettes/500');
 var TimerRing = require('./src/meshes/TimerRing');
 var LabelFactory = require('./src/factories/LabelFactory');
+var eases = require('eases');
 
+var ColorPreviewGrid = require('./src/meshes/ColorPreviewGrid');
 // var colorPalette = colors[49];
 var colorPalette = colors[~~(colors.length * Math.random())];
 colorPalette = colorPalette.map(function strToColor(colorStr) {
@@ -20,8 +22,15 @@ var durationBreakSession = urlparam('break', 5) * 60;
 var durationWorkSession = urlparam('work', 15) * 60;
 
 
-var workColors = colors[~~(colors.length * Math.random())];
-var breakColors = colors[~~(colors.length * Math.random())];
+
+var workColorsIndex = urlparam('colorsWork', ~~(colors.length * Math.random()));
+var workColors = colors[workColorsIndex];
+console.log('colorsWork=' + workColorsIndex);
+// var workColors = colors[499];
+var breakColorsIndex = urlparam('colorsBreak', ~~(colors.length * Math.random()));
+var breakColors = colors[breakColorsIndex];
+console.log('colorsBreak=' + breakColorsIndex);
+// var breakColors = colors[98];
 function mapHexToColors(hex) {
 	return new three.Color(hex);
 }
@@ -52,9 +61,11 @@ var scheduleChunk = [
 ];
 
 var schedule = [];
-for (var i = 0; i < 10; i++) {
+var repeat = urlparam('repeat', 3);
+for (var i = 0; i < repeat; i++) {
 	schedule = schedule.concat(scheduleChunk);
 }
+var totalScheduleChunks = schedule.length;
 var b = new three.Color(0, 0, 0);
 schedule.unshift({
 	label: 'WAIT',
@@ -127,6 +138,51 @@ labelFactory.createLabel('WORK', colorPalette[3], 32, function onActivityLabel(m
 	onResize(window.innerWidth, window.innerHeight);
 });
 
+
+var scheduleStrip = new three.Object3D();
+var cursor = 0;
+var scheduleStripSize = 0;
+for (var i = 0; i < schedule.length; i++) {
+	if(schedule[i].durationMs === 0) {
+		continue;
+	}
+	var scheduleStripBlock = new three.Object3D();
+	var sizes = [0.05, 0.25, 0.7];
+	var cursor = 0;
+	var colorHeight = 1 / schedule[i].colors.length;
+	for (var j = 1; j < schedule[i].colors.length - 1; j++) {
+		cursor += sizes[j-1] * 0.5;
+		var geom = new three.PlaneBufferGeometry(1, 1, 1, 1);
+		var color1 = new three.Color(schedule[i].colors[j]);
+		var color2 = new three.Color(schedule[i].colors[j+1]);
+		var colorArr = new Float32Array(12);
+		color1.toArray(colorArr, 0);
+		color2.toArray(colorArr, 3);
+		color1.toArray(colorArr, 6);
+		color2.toArray(colorArr, 9);
+		// colorArr = colorArr.map(Math.random);
+		geom.addAttribute('color', new three.BufferAttribute(colorArr, 3));
+		var scheduleChunk = new three.Mesh(geom, new three.MeshBasicMaterial({
+			// color: schedule[i].colors[4],
+			vertexColors: three.VertexColors
+		}));
+		scheduleChunk.scale.y = sizes[j-1];
+		scheduleChunk.position.y = 1-cursor;
+		scheduleStripBlock.add(scheduleChunk);
+		cursor += sizes[j-1] * 0.5;
+	}
+	scheduleStripBlock.position.x = scheduleStripSize + schedule[i].durationMs * 0.5;
+	scheduleStripBlock.scale.x = schedule[i].durationMs;
+	scheduleStripBlock.rotation.x = Math.PI;
+	scheduleStripBlock.scale.y = 0.333;
+	scheduleStrip.add(scheduleStripBlock);
+	scheduleStripSize += schedule[i].durationMs;
+}
+view.scene.add(scheduleStrip);
+
+// var colorPreview = new ColorPreviewGrid(colors);
+// colorPreview.rotation.x = Math.PI;
+// view.scene.add(colorPreview);
 // view.renderManager.onEnterFrame.add(timerRing.onEnterFrame);
 
 function onResize(w, h) {
@@ -148,6 +204,12 @@ function onResize(w, h) {
 		activityLabel.scale.set(s * 0.0013, sy * 0.0013, s * 0.0013);
 		activityLabel.position.set(w * 0.5, h * 0.5 - s * 0.12, 0);
 	}
+
+	scheduleStrip.position.set(0, h, 0);
+	scheduleStrip.scale.set(w / scheduleStripSize, s * 0.05, 10);
+
+	// colorPreview.position.set(w * 0.5, h * 0.5, 0);
+	// colorPreview.scale.set(s, s, s);
 };
 
 setTimeout(function () {
@@ -180,14 +242,12 @@ function onEnterFrame() {
 				onUpdate: i === 0 ? onUpdateBGColor : undefined
 			});
 		}
-
-		// if(activityLabel) {
-		// 	tweener.to(activityLabel.material.uniforms.color.value, 1, {
-		// 		r: schedule[0].colors[4].r,
-		// 		g: schedule[0].colors[4].g,
-		// 		b: schedule[0].colors[4].b
-		// 	});
-		// }
+		for (var i = 0; i < scheduleStrip.children.length; i++) {
+			tweener.to(scheduleStrip.children[i].scale, 1, {
+				y: ((totalScheduleChunks-i) === schedule.length) ? 1 : 0.33,
+				ease: eases.quartInOut 
+			});
+		}
 		return;
 	}
 	if(timeLabel) {
