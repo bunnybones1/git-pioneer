@@ -2,13 +2,24 @@
   "name": "work-timer",
   "version": "1.0.0",
   "description": "A work timer for deep work.",
-  "main": "index.js",
+  "main": "index.html",
   "private": true,
   "license": "UNLICENSED",
   "author": {
     "name": "Tomasz Dysinski",
     "email": "oz@bunnybones.com",
     "url": "https://github.com/bunnybones1"
+  },
+  "single-instance": true,
+  "window": {
+    "title": "WebGL on Windows example",
+    "width": 1080,
+    "height": 1920,
+    "min_width": 240,
+    "min_height": 160,
+    "resizable": true,
+    "toolbar": true,
+    "frame": false 
   },
   "dependencies": {
     "clamp": "^1.0.1",
@@ -25,14 +36,17 @@
     "urlparam": "^1.0.2"
   },
   "devDependencies": {
-    "browserify": "^14.4.0",
+    "browserify": "^14.5.0",
     "budo": "^10.0.4",
     "uglify-js": "^3.1.1"
   },
   "scripts": {
     "test": "budo index.js --live --open -- -t glslify",
+    "nw": "nwjs.app/Contents/MacOS/nwjs .",
+    "webgl": "budo index.js --live --open -- -t glslify",
     "build": "browserify -t glslify index.js -o bundle.js && uglifyjs bundle.js -m -c -o bundle.min.js"
   },
+  "chromium-args": "--enable-webgl --ignore-gpu-blacklist --use-gl=desktop",
   "keywords": [],
   "repository": {
     "type": "git",

@@ -17,7 +17,7 @@ function __getSharedGeometry() {
 	return __sharedGeometry;
 }
 
-__defaultParams = {
+var __defaultParams = {
 	durationMs: 1000,
 	color1: new three.Color(0xff0000),
 	color2: new three.Color(0xffff00),

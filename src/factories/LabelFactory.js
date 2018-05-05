@@ -3,9 +3,22 @@ var MSDFShader = require('three-bmfont-text/shaders/msdf');
 var loadFont = require('load-bmfont');
 var three = require('three');
 
+
 function LabelFactory(params) {
+  if(__instance) {
+    throw Exception("No need for multiple instances, just use LabelFactory.getInstance()");
+  }
   this.queuedCreations = [];
   loadFont('fonts/Roboto-msdf.json', _onFontLoad.bind(this));
+  __instance = this;
+}
+
+var __instance;
+LabelFactory.getInstance = function getInstance() {
+  if(!__instance) {
+    __instance = new LabelFactory();
+  }
+  return __instance;
 }
 
 function _onFontLoad(err, font) {
@@ -28,20 +41,20 @@ function _processQueuedCreates() {
   }
 }
 
-function queueCreateLabel(message, color, fontSize, callback) {
+function queueCreateLabel(message, color, callback) {
   console.log('deferring label creation until factory is ready');
   this.queuedCreations.push(arguments);
 }
 
-function createLabel(message, color, fontSize, callback) {
+function createLabel(message, color, align, width, callback) {
   var geometry = createGeometry({
-    width: 300,
-    align: 'center',
+    width: width || 300,
+    align: align || 'center',
     font: this.font
   });
 
   geometry.update(message);
-  geometry.recenter = recenterGeometry.bind(geometry);
+  geometry.recenter = recenterGeometry.bind(geometry, align);
 
   geometry.recenter();
 
@@ -56,7 +69,7 @@ function createLabel(message, color, fontSize, callback) {
   callback(mesh);
 }
 
-function recenterGeometry() {
+function recenterGeometry(align) {
   var minX = Infinity;
   var maxX = -Infinity;
   var minY = Infinity;
@@ -68,7 +81,16 @@ function recenterGeometry() {
     minY = Math.min(minY, vertPosArr[i+1]);
     maxY = Math.max(maxY, vertPosArr[i+1]);
   }
-  var midX = (minX + maxX) * 0.5;
+  var alignFloat = 0.5;
+  switch(align) {
+    case "left":
+      alignFloat = 0;
+      break;
+    case "right":
+      alignFloat = 1;
+      break;
+  }
+  var midX = (minX + maxX) * alignFloat;
   var midY = (minY + maxY) * 0.5;
   for (var i = 0; i < vertPosArr.length; i+=2) {
     vertPosArr[i] = vertPosArr[i] - midX;
