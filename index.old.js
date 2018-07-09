@@ -7,43 +7,12 @@ var CommitCircle = require('./src/meshes/CommitCircle');
 var LabelFactory = require('./src/factories/LabelFactory');
 var eases = require('eases');
 
-var ColorPreviewGrid = require('./src/meshes/ColorPreviewGrid');
-// var colorPalette = colors[49];
-var colorPalette = colors[~~(colors.length * Math.random())];
-colorPalette = colorPalette.map(mapHexToColors);
-
-if(urlparam('break', -1) === -1 || urlparam('work', -1) === -1) {
-	window.location.href = window.location.protocol + '//' + window.location.host + window.location.pathname + '?work=15&break=5&black=false';
-}
-var durationBreakSession = urlparam('break', 5) * 60;
-var durationWorkSession = urlparam('work', 15) * 60;
-
-var workColorsIndex = urlparam('colorsWork', ~~(colors.length * Math.random()));
-var workColors = colors[workColorsIndex];
-console.log('colorsWork=' + workColorsIndex);
-// var workColors = colors[499];
-var breakColorsIndex = urlparam('colorsBreak', ~~(colors.length * Math.random()));
-var breakColors = colors[breakColorsIndex];
-console.log('colorsBreak=' + breakColorsIndex);
-// var breakColors = colors[98];
-function mapHexToColors(hex) {
-	return new three.Color(hex);
-}
 
 var overallScale = 0.4;
 
-colorPalette.unshift(colorPalette.splice(2, 1)[0]);
-workColors.unshift(workColors.splice(2, 1)[0]);
-breakColors.unshift(breakColors.splice(2, 1)[0]);
 
-//projector mode looks best on black background
-if(urlparam('black', false)) {
-	colorPalette[0].setRGB(0, 0, 0);
-	workColors[0] = 0x000000;
-	breakColors[0] = 0x000000;
-}
-
-var camera = new three.OrthographicCamera(100, -100, 100, -100, 100, -100);
+var camera = new three.PerspectiveCamera(60);
+// var camera = new three.OrthographicCamera(100, -100, 100, -100, 100, -100);
 var view = new ManagedView.View({
 	rendererSettings: {
 		// autoClear: false,
@@ -53,17 +22,13 @@ var view = new ManagedView.View({
 	camera: camera
 });
 
-view.renderer.setClearColor(colorPalette[0], 1);
+view.renderer.setClearColor(0x000000, 1);
 
 var RafTweener = require('raf-tweener');
 var tweener = new RafTweener();
 tweener.start();
 
 var labelFactory = LabelFactory.getInstance();
-
-// var colorPreview = new ColorPreviewGrid(colors);
-// colorPreview.rotation.x = Math.PI;
-// view.scene.add(colorPreview);
 
 var nodeSpacing = 40 * overallScale;
 
