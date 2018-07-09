@@ -1,5 +1,5 @@
 # git-pioneer
-An experimental tool to visual git. Built with threejs and NW.js.
+An experimental tool to visualize git. Built with threejs and NW.js.
 Currently only developed on OSX so windows development will require extra unknown work.
 
 ## Setup
