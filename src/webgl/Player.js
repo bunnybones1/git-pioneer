@@ -119,7 +119,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	var rayFrom = playerBody.position;
 	var rayTo = playerBody.position.clone();
 
-	pointers.onPointerSelectSignal.add(onPointerSelect.bind(this));
+	pointers.onPointerDownSignal.add(onPointerDown.bind(this));
 
 	this.keyboard = keyboard;
 	this.pointLight = pointLight;
@@ -222,7 +222,7 @@ function onUpdateSim() {
 	}
 }
 
-function onPointerSelect(x, y, id) {
+function onPointerDown(x, y, id) {
 	console.log(x, y, id);
 	var pos = this.crosshair.localToWorld(new three.Vector3());
 	if(this.activeTool) {
