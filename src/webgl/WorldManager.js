@@ -1,12 +1,13 @@
 var three = require('three');
 var CheckerboardTexture = require('threejs-texture-checkerboard');
-var CANNON = require('cannon');
+var cannon = require('cannon');
 var urlParam = require('urlparam');
 var clamp = require('clamp');
 var Signal = require('signals').Signal;
 var Player = require('./Player');
 
-var BallMaker = require('gameObjects/tools/BallMaker');
+var tools = require('gameObjects/tools');
+var effects = require('gameObjects/effects');
 
 var CollisionLayers = require('CollisionLayers');
 
@@ -19,36 +20,36 @@ function WorldManager(app) {
 
 	view.renderer.setClearColor(0x7f7f7f);
 
-	var planeMaterial = new THREE.MeshPhongMaterial({
+	var planeMaterial = new three.MeshPhongMaterial({
 		map: new CheckerboardTexture(0x6f4f3f, 0x7f5f4f, 1000, 1000)
 	});
-	var plane = new THREE.Mesh(
-		new THREE.PlaneGeometry(1000, 1000, 1, 1),
+	var plane = new three.Mesh(
+		new three.PlaneGeometry(1000, 1000, 1, 1),
 		planeMaterial
 	);
 
 	scene.add(plane);
 
-	var world = new CANNON.World();
+	var world = new cannon.World();
 	world.gravity.set(0, 0, -16);
 	world.gravity.w = 0.4;
-	world.broadphase = new CANNON.NaiveBroadphase();
+	world.broadphase = new cannon.NaiveBroadphase();
 	world.solver.iterations = 10;
 
 	var objects = [];
 
-	var ambient = new THREE.HemisphereLight(0x7fafcf, 0x6f4f3f, 1); 
+	var ambient = new three.HemisphereLight(0x7fafcf, 0x6f4f3f, 1); 
 	ambient.position.set(0, 0, 100);
 	scene.add(ambient);
 
-	var groundBody = new CANNON.Body({
+	var groundBody = new cannon.Body({
 			mass: 0, // mass == 0 makes the body static
 			collisionFilterGroup: CollisionLayers.ENVIRONMENT,
 			collisionFilterMask: CollisionLayers.PLAYER | CollisionLayers.ITEMS
 	});
-	var groundShape = new CANNON.Plane();
+	var groundShape = new cannon.Plane();
 
-	var groundMaterial = new CANNON.Material();
+	var groundMaterial = new cannon.Material();
 	groundMaterial.friction = 0.9;
 
 	groundShape.material = groundMaterial;
@@ -57,7 +58,7 @@ function WorldManager(app) {
 
 	function add(object) {
 		scene.add(object.mesh);
-		world.addBody(object.body);
+		if(object.body) world.addBody(object.body);
 		objects.push(object);
 	}
 	var queueToRemove = [];
@@ -66,12 +67,12 @@ function WorldManager(app) {
 	}
 	function remove(object, callback) {
 		scene.remove(object.mesh);
-		world.removeBody(object.body);
+		if(object.body) world.removeBody(object.body);
 		var index = objects.indexOf(object);
 		if(index != -1) {
 			objects.splice(index, 1);
 		}
-		callback();
+		if(callback) callback();
 	}
 
 
@@ -84,25 +85,26 @@ function WorldManager(app) {
 	var maxSubSteps = 3;
 	 
 	var radius = 0.5; // m 
-	var geometry = new THREE.SphereGeometry(radius, 32, 16);
+	var geometry = new three.SphereGeometry(radius, 32, 16);
 
-	var material = new THREE.MeshPhongMaterial({
+	var material = new three.MeshPhongMaterial({
 		color: 0xffffff,
 		map: new CheckerboardTexture()
 	});
 
-	function makeBall(x, y, z, size) {
-		var ballMesh = new THREE.Mesh(
+	function makeBall(pos, size, vel) {
+		var ballMesh = new three.Mesh(
 			geometry,
 			material
 		);
 		var scaler = size * (Math.random() * 0.5 + 1);
-		var shape = new CANNON.Sphere(radius * scaler);
+		var shape = new cannon.Sphere(radius * scaler);
 		ballMesh.scale.multiplyScalar(scaler);
 		shape.material = groundMaterial;
-		var ballBody = new CANNON.Body({
+		var ballBody = new cannon.Body({
 			mass: 5 * Math.pow(scaler, 3), // kg 
-			position: new CANNON.Vec3(x, y, z), // m 
+			position: pos, // m 
+			velocity: vel, // m 
 			shape: shape,
 			linearDamping: 0.6,
 			angularDamping: 0.6,
@@ -112,10 +114,17 @@ function WorldManager(app) {
 			collisionFilterMask: CollisionLayers.ENVIRONMENT | CollisionLayers.PLAYER | CollisionLayers.ITEMS
 		});
 		ballBody.resistGravity = true;
-		add({
+		var ball = {
 			mesh: ballMesh,
 			body: ballBody
-		});
+		};
+		add(ball);
+		return ball;
+	}
+
+	function makeHitEffect(pos, size) {
+		var hit = new effects.EnergyBubblePop(pos, size, remove);
+		add(hit);
 	}
 
 	function weaponFireMakeBall(pos, playerSize) {
@@ -126,7 +135,11 @@ function WorldManager(app) {
 	// 	primaryFire: weaponFireMakeBall
 	// });
 
-	add(new BallMaker(this, new CANNON.Vec3(-1, -1, 1)));
+	var i = 0;
+	for(var tool in tools){
+		add(new tools[tool](this, new cannon.Vec3(i, -1, 1)));
+		i += 2;
+	}
 
 
 	// Start the simulation loop 
@@ -140,8 +153,10 @@ function WorldManager(app) {
 		objects.forEach(function(object) {
 			if(object.onEnterFrame) object.onEnterFrame();
 			if(object.onUpdateSim) object.onUpdateSim();
-			object.mesh.position.copy(object.body.position);
-			object.mesh.quaternion.copy(object.body.quaternion);
+			if(object.body) {
+				object.mesh.position.copy(object.body.position);
+				object.mesh.quaternion.copy(object.body.quaternion);
+			}
 		});
 		if(queueToRemove.length > 0) {
 			for(var i = 0; i < queueToRemove.length; i++) {
@@ -157,6 +172,7 @@ function WorldManager(app) {
 	this.add = add.bind(this);
 	this.remove = requestRemove.bind(this);
 	this.makeBall = makeBall.bind(this);
+	this.makeHitEffect = makeHitEffect.bind(this);
 }
 
 module.exports = WorldManager;

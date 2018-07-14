@@ -23,6 +23,7 @@ function Player(scene, camera, canvas, pointers, world) {
 				_activeTool.mesh.parent.remove(_activeTool.mesh);
 			}
 			_activeTool = val;
+			_activeTool.player = this;
 			handPivot.add(_activeTool.mesh);
 			_activeTool.subMesh.rotation.set(0, 0, 0);
 			_activeTool.mesh.rotation.set(0, 0, 0);
