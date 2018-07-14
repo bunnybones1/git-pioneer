@@ -5,6 +5,7 @@ var CANNON = require('cannon');
 var Signal = require('signals').Signal;
 var CollisionLayers = require('CollisionLayers');
 var clamp = require('clamp');
+require('extensions/array');
 
 var sizeSpeedMax = 0.1;
 var sizeSpeedStep = 0.001;
@@ -14,6 +15,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.sizeSpeed = 0;
 
 	var _activeTool = null;
+	var tools = [];
 	Object.defineProperty(this, "activeTool", {
 		get: function() {
 			return _activeTool;
@@ -22,13 +24,13 @@ function Player(scene, camera, canvas, pointers, world) {
 			if(_activeTool != null) {
 				_activeTool.mesh.parent.remove(_activeTool.mesh);
 			}
+			tools.pushUnique(val);
 			_activeTool = val;
 			_activeTool.player = this;
 			handPivot.add(_activeTool.mesh);
 			_activeTool.subMesh.rotation.set(0, 0, 0);
 			_activeTool.mesh.rotation.set(0, 0, 0);
 			_activeTool.mesh.position.set(0, 0, 0);
-
 		}
 	})
 	
@@ -138,7 +140,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.crosshair = crosshair;
 	this.onPlayerSizeChangedSignal = onPlayerSizeChangedSignal;
 
-	this.tools = [];
+	this.tools = tools;
 
 	this.onUpdateSim = onUpdateSim.bind(this);
 	this.onEnterFrame = onEnterFrame.bind(this);
@@ -149,11 +151,11 @@ function Player(scene, camera, canvas, pointers, world) {
 function onEnterFrame() {
 	this.fpsController.update();
 	var sizeChanged;
-	if(this.keyboard.isPressed('dash')) {
+	if(this.keyboard.isPressed('openbracket')) {
 		sizeChanged = true;
 		this.sizeSpeed -= sizeSpeedStep;
 	}
-	if(this.keyboard.isPressed('equals')) {
+	if(this.keyboard.isPressed('closebraket')) {
 		sizeChanged = true;
 		this.sizeSpeed += sizeSpeedStep;
 	}
@@ -183,6 +185,16 @@ function onEnterFrame() {
 		this.crosshair.position.z = -playerSize;
 		this.playerSize = playerSize;
 	}
+	if(this.keyboard.consumePressed('dash')) {
+		if(!this.activeTool) return;
+		this.activeTool = this.tools.prev(this.activeTool);
+	}
+	if(this.keyboard.consumePressed('equals')) {
+		if(!this.activeTool) return;
+		this.activeTool = this.tools.next(this.activeTool);
+	}
+
+
 	// if(this.activeTool) {
 	// 	this.activeTool.mesh.position;
 	// 	this.activeTool.mesh.position.set(
@@ -219,13 +231,11 @@ function onPointerSelect(x, y, id) {
 }
 
 function addTool(tool) {
-	if(this.tools.indexOf(tool) == -1) {
-		this.tools.push(tool);
+	var added = this.tools.pushUnique(tool);
+	if(added) {
 		this.activeTool = tool;
-		return true;
-	} else {
-		return false;
 	}
+	return added;
 }
 
 module.exports = Player;
