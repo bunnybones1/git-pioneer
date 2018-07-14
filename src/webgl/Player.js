@@ -27,6 +27,7 @@ function Player(scene, camera, canvas, pointers, world) {
 			tools.pushUnique(val);
 			_activeTool = val;
 			_activeTool.player = this;
+			_activeTool.onEnterFrame = _activeTool.onEnterFrameEquipped;
 			handPivot.add(_activeTool.mesh);
 			_activeTool.subMesh.rotation.set(0, 0, 0);
 			_activeTool.mesh.rotation.set(0, 0, 0);
@@ -120,6 +121,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	var rayTo = playerBody.position.clone();
 
 	pointers.onPointerDownSignal.add(onPointerDown.bind(this));
+	pointers.onPointerUpSignal.add(onPointerUp.bind(this));
 
 	this.keyboard = keyboard;
 	this.pointLight = pointLight;
@@ -195,14 +197,9 @@ function onEnterFrame() {
 	}
 
 
-	// if(this.activeTool) {
-	// 	this.activeTool.mesh.position;
-	// 	this.activeTool.mesh.position.set(
-	// 		0,
-	// 		0,
-	// 		0
-	// 	);
-	// }
+	if(this.activeTool && this.activeTool.onEnterFrame) {
+		this.activeTool.onEnterFrame();
+	}
 }
 
 function onUpdateSim() {
@@ -223,10 +220,16 @@ function onUpdateSim() {
 }
 
 function onPointerDown(x, y, id) {
-	console.log(x, y, id);
-	var pos = this.crosshair.localToWorld(new three.Vector3());
-	if(this.activeTool) {
-		this.activeTool.primaryFire(pos, this.playerSize);
+	if(this.activeTool && this.activeTool.primaryFireStart) {
+		var pos = this.crosshair.localToWorld(new three.Vector3());
+		this.activeTool.primaryFireStart(pos, this.playerSize);
+	}
+}
+
+function onPointerUp(x, y, id) {
+	if(this.activeTool && this.activeTool.primaryFireEnd) {
+		var pos = this.crosshair.localToWorld(new three.Vector3());
+		this.activeTool.primaryFireEnd(pos, this.playerSize);
 	}
 }
 

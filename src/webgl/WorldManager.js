@@ -122,8 +122,8 @@ function WorldManager(app) {
 		return ball;
 	}
 
-	function makeHitEffect(pos, size) {
-		var hit = new effects.EnergyBubblePop(pos, size, remove);
+	function makeHitEffect(pos, size, duration) {
+		var hit = new effects.EnergyBubblePop(pos, size, duration, remove);
 		add(hit);
 	}
 
@@ -132,7 +132,7 @@ function WorldManager(app) {
 	}
 
 	// player.addTool({
-	// 	primaryFire: weaponFireMakeBall
+	// 	primaryFireStart: weaponFireMakeBall
 	// });
 
 	var i = 0;
