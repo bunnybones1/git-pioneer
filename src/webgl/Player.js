@@ -23,6 +23,7 @@ function Player(scene, camera, canvas, pointers, world) {
 		set: function(val) {
 			if(_activeTool != null) {
 				_activeTool.mesh.parent.remove(_activeTool.mesh);
+				if(_activeTool.primaryFireEnd) _activeTool.primaryFireEnd();
 			}
 			tools.pushUnique(val);
 			_activeTool = val;
@@ -101,6 +102,10 @@ function Player(scene, camera, canvas, pointers, world) {
 	crosshair.position.z = -1;
 	crosshair.add(handPivot);
 
+	var crosshair2 = new Crosshair();
+	camera.add(crosshair2);
+	crosshair2.position.z = -2;
+
 	playerBody.addEventListener("collide", function(collision) {
 		if(collision.target == playerBody && collision.body.interactiveObject != null) {
 			var interactiveObject = collision.body.interactiveObject;
@@ -141,6 +146,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.rayTo = rayTo;
 	this.fpsController = fpsController;
 	this.crosshair = crosshair;
+	this.crosshair2 = crosshair2;
 	this.onPlayerSizeChangedSignal = onPlayerSizeChangedSignal;
 
 	this.tools = tools;
@@ -190,6 +196,8 @@ function onEnterFrame(timeScale) {
 		this.headPivot.position.y = this.headY * playerSize;
 		this.crosshair.scale.set(playerSize, playerSize, playerSize);
 		this.crosshair.position.z = -playerSize;
+		this.crosshair2.scale.set(playerSize, playerSize, playerSize);
+		this.crosshair2.position.z = -playerSize * 2;
 		this.playerSize = playerSize;
 	}
 	if(this.keyboard.consumePressed('dash')) {

@@ -172,6 +172,7 @@ function WorldManager(app) {
 	})();
 
 	this.world = world;
+	this.scene = scene;
 
 	this.add = add.bind(this);
 	this.remove = requestRemove.bind(this);
