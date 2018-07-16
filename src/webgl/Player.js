@@ -123,6 +123,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	pointers.onPointerDownSignal.add(onPointerDown.bind(this));
 	pointers.onPointerUpSignal.add(onPointerUp.bind(this));
 
+	this.yUp = true;
 	this.keyboard = keyboard;
 	this.pointLight = pointLight;
 	this.camera = camera;
@@ -209,6 +210,9 @@ function onUpdateSim() {
 	playerBody.position.vadd(camera.position, playerBody.position);
 	// playerBody.velocity.vadd(camera.position, playerBody.velocity);
 	camera.position.set(0, 0, 0);
+	if(this.yUp) {
+		camera.lookAt(camera.parent.worldToLocal(this.crosshair.localToWorld(new three.Vector3())));
+	}
 	if(this.keyboard.isPressed('space')) {
 		this.rayTo.copy(this.rayFrom);
 		this.rayTo.z -= 0.1 * this.playerSize;
