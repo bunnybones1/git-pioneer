@@ -146,12 +146,16 @@ function WorldManager(app) {
 	var lastTime;
 	(function simloop(time){
 		requestAnimationFrame(simloop);
-		if(lastTime !== undefined){
-			 var dt = (time - lastTime) / 1000;
-			 world.step(fixedTimeStep, dt, maxSubSteps);
+		if(lastTime === undefined){
+			lastTime = time;
 		}
+		var dt = (time - lastTime) * 0.001;
+		if(dt > 0) {
+			world.step(fixedTimeStep, dt, maxSubSteps);
+		}
+		var timeScale = (1/60) / dt;
 		objects.forEach(function(object) {
-			if(object.onEnterFrame) object.onEnterFrame();
+			if(object.onEnterFrame) object.onEnterFrame(timeScale);
 			if(object.onUpdateSim) object.onUpdateSim();
 			if(object.body) {
 				object.mesh.position.copy(object.body.position);

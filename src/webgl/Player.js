@@ -150,7 +150,7 @@ function Player(scene, camera, canvas, pointers, world) {
 
 }
 
-function onEnterFrame() {
+function onEnterFrame(timeScale) {
 	this.fpsController.update();
 	var sizeChanged;
 	if(this.keyboard.isPressed('openbracket')) {
@@ -198,7 +198,7 @@ function onEnterFrame() {
 
 
 	if(this.activeTool && this.activeTool.onEnterFrame) {
-		this.activeTool.onEnterFrame();
+		this.activeTool.onEnterFrame(timeScale);
 	}
 }
 
