@@ -149,6 +149,10 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.onEnterFrame = onEnterFrame.bind(this);
 	this.addTool = addTool.bind(this);
 
+	camera.rotation.x = Math.PI * -0.5;
+	camera.updateMatrix();
+	camera.updateMatrixWorld();
+
 }
 
 function onEnterFrame(timeScale) {
