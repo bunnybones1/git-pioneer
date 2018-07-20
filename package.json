@@ -40,6 +40,7 @@
     "urlparam": "^1.0.2"
   },
   "devDependencies": {
+    "budo": "^11.3.2",
     "uglify-js": "^3.1.1"
   },
   "scripts": {
