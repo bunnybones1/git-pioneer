@@ -65,6 +65,19 @@ function WorldManager(app) {
 	function requestRemove(object, callback) {
 		queueToRemove.push([object, callback]);
 	}
+	function requestDestroy(object, callback) {
+		if(object && object.body) {
+			with(object.body) {
+				for(var i = 0; i < shapes.length; i++) {
+					var shape = shapes[i];
+					if(shape.radius > 0) {
+						makeHitEffect(pointToWorldFrame(shapeOffsets[i]), shape.radius, 0.5);
+					}
+				}
+			}
+		}
+		requestRemove(object, callback);
+	}
 	function remove(object, callback) {
 		scene.remove(object.mesh);
 		if(object.body) world.removeBody(object.body);
@@ -74,6 +87,7 @@ function WorldManager(app) {
 		}
 		if(callback) callback();
 	}
+
 
 
 	var player = new Player(scene, camera, canvas, pointers, this);
@@ -118,6 +132,7 @@ function WorldManager(app) {
 			mesh: ballMesh,
 			body: ballBody
 		};
+		ballBody.interactiveObject = ball;
 		add(ball);
 		return ball;
 	}
@@ -176,6 +191,7 @@ function WorldManager(app) {
 
 	this.add = add.bind(this);
 	this.remove = requestRemove.bind(this);
+	this.destroy = requestDestroy.bind(this);
 	this.makeBall = makeBall.bind(this);
 	this.makeHitEffect = makeHitEffect.bind(this);
 }
