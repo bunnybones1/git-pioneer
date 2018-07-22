@@ -9,6 +9,7 @@ var Player = require('./Player');
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
 
+var geomLib = require('geometry/lib');
 var CollisionLayers = require('CollisionLayers');
 
 function WorldManager(app) {
@@ -99,14 +100,14 @@ function WorldManager(app) {
 	var maxSubSteps = 3;
 	 
 	var radius = 0.5; // m 
-	var geometry = new three.SphereGeometry(radius, 32, 16);
+	var geometry = geomLib.sphere(radius, 32, 16);
 
 	var material = new three.MeshPhongMaterial({
 		color: 0xffffff,
 		map: new CheckerboardTexture()
 	});
 
-	function makeBall(pos, size, vel) {
+	function makeBall(pos, size, vel, enviro = false) {
 		var ballMesh = new three.Mesh(
 			geometry,
 			material
@@ -119,12 +120,13 @@ function WorldManager(app) {
 			mass: 5 * Math.pow(scaler, 3), // kg 
 			position: pos, // m 
 			velocity: vel, // m 
+			type: enviro ? cannon.Body.STATIC : cannon.Body.DYNAMIC,
 			shape: shape,
 			linearDamping: 0.6,
 			angularDamping: 0.6,
 		 	resistGravity: true,
 			// fixedRotation: true,
-			collisionFilterGroup: CollisionLayers.ITEMS,
+			collisionFilterGroup: enviro ? CollisionLayers.ENVIRONMENT : CollisionLayers.ITEMS,
 			collisionFilterMask: CollisionLayers.ENVIRONMENT | CollisionLayers.PLAYER | CollisionLayers.ITEMS
 		});
 		ballBody.resistGravity = true;
