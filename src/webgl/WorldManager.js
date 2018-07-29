@@ -8,18 +8,13 @@ var Player = require('./Player');
 
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
+var Portal = require('gameObjects/Portal');
 
 var geomLib = require('geometry/lib');
 var CollisionLayers = require('CollisionLayers');
 
-function WorldManager(app) {
-	var scene = app.viewManager.scene;
-	var view = app.viewManager.view;
-	var camera = app.viewManager.camera;
-	var canvas = app.viewManager.canvas;
-	var pointers = app.inputManager.pointers;
-
-	view.renderer.setClearColor(0x7f7f7f);
+function WorldManager(canvas, scene, camera, inputManager) {
+	var pointers = inputManager.pointers;
 
 	var planeMaterial = new three.MeshPhongMaterial({
 		map: new CheckerboardTexture(0x6f4f3f, 0x7f5f4f, 1000, 1000)
@@ -46,7 +41,7 @@ function WorldManager(app) {
 	var groundBody = new cannon.Body({
 			mass: 0, // mass == 0 makes the body static
 			collisionFilterGroup: CollisionLayers.ENVIRONMENT,
-			collisionFilterMask: CollisionLayers.PLAYER | CollisionLayers.ITEMS
+			collisionFilterMask: CollisionLayers.PLAYER | CollisionLayers.ITEMS | CollisionLayers.PORTALS
 	});
 	var groundShape = new cannon.Plane();
 
@@ -124,7 +119,6 @@ function WorldManager(app) {
 			shape: shape,
 			linearDamping: 0.6,
 			angularDamping: 0.6,
-		 	resistGravity: true,
 			// fixedRotation: true,
 			collisionFilterGroup: enviro ? CollisionLayers.ENVIRONMENT : CollisionLayers.ITEMS,
 			collisionFilterMask: CollisionLayers.ENVIRONMENT | CollisionLayers.PLAYER | CollisionLayers.ITEMS
@@ -158,10 +152,13 @@ function WorldManager(app) {
 		i += 2;
 	}
 
+	var portal = new Portal(this, new cannon.Vec3(0, 1, 1));
+	add(portal);
+
 
 	// Start the simulation loop 
 	var lastTime;
-	(function simloop(time){
+	function simloop(time){
 		requestAnimationFrame(simloop);
 		if(lastTime === undefined){
 			lastTime = time;
@@ -186,16 +183,21 @@ function WorldManager(app) {
 			queueToRemove.length = 0;
 		}
 		lastTime = time;
-	})();
+	};
+
+	this.portal = portal;
+	this.player = player;
 
 	this.world = world;
 	this.scene = scene;
+
 
 	this.add = add.bind(this);
 	this.remove = requestRemove.bind(this);
 	this.destroy = requestDestroy.bind(this);
 	this.makeBall = makeBall.bind(this);
 	this.makeHitEffect = makeHitEffect.bind(this);
+	requestAnimationFrame(simloop);
 }
 
 module.exports = WorldManager;

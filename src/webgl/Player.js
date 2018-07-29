@@ -46,7 +46,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	camera.add(pointLight);
 
 	camera.up.set(0,0,1);
-	camera.position.set(0, 30, 30);
+	camera.position.set(0, 0, 0);
 	camera.lookAt(new THREE.Vector3());
 
 	var fpsController = new FPSController(camera, canvas, 
@@ -63,7 +63,7 @@ function Player(scene, camera, canvas, pointers, world) {
 	// bodyShape.material = groundMaterial;
 	var playerBody = new CANNON.Body({
 		mass: 50, // kg 
-		position: new CANNON.Vec3(0, 5, 5), // m 
+		position: new CANNON.Vec3(0, 6, 0.15), // m 
 		rotation: new CANNON.Vec3(0, 1, 0), // m 
 		fixedRotation: true,
 		linearDamping: 0.5,
@@ -81,7 +81,6 @@ function Player(scene, camera, canvas, pointers, world) {
 		playerBody.addShape(shape, new CANNON.Vec3(d[0], d[1], d[2]));
 	}
 	playerBody.quaternion.setFromEuler(Math.PI * 0.5, 0, 0);
-	playerBody.position.set(0, 6, 6);
 	var playerMesh = new three.Object3D();
 	var headPivot = new three.Object3D();
 	var handPivot = new three.Object3D();
@@ -95,6 +94,10 @@ function Player(scene, camera, canvas, pointers, world) {
 	handPivot.rotation.set(Math.PI * 0.5, 0, 0);
 
 	playerBody.player = this;
+	playerBody.interactiveObject = {
+		type: "player",
+		object: this
+	}
 
 
 	var crosshair = new Crosshair();

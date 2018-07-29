@@ -35,7 +35,6 @@
     "three-bmfont-text": "^2.2.1",
     "threejs-camera-controller-first-person-desktop": "^5.0.1",
     "threejs-gui-crosshair": "^2.0.0",
-    "threejs-managed-view": "^7.0.0",
     "threejs-texture-checkerboard": "^1.0.0",
     "urlparam": "^1.0.2"
   },
