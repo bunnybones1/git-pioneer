@@ -14,6 +14,9 @@ var geomLib = require('geometry/lib');
 var CollisionLayers = require('CollisionLayers');
 
 function WorldManager(canvas, scene, camera, inputManager) {
+	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
+	scene.fog = fog;
+
 	var pointers = inputManager.pointers;
 
 	var planeMaterial = new three.MeshPhongMaterial({
@@ -84,11 +87,17 @@ function WorldManager(canvas, scene, camera, inputManager) {
 		if(callback) callback();
 	}
 
-
-
-	var player = new Player(scene, camera, canvas, pointers, this);
-
-	add(player);
+	var player;
+	function enablePlayer() {
+		player = new Player(scene, camera, canvas, pointers, this);
+		add(player);
+	}
+	function disablePlayer() {
+		if(!player) return;
+		scene.add(camera);
+		remove(player);
+		player = null;
+	}
 
 
 	var fixedTimeStep = 1.0 / 60.0; // seconds 
@@ -168,14 +177,15 @@ function WorldManager(canvas, scene, camera, inputManager) {
 			world.step(fixedTimeStep, dt, maxSubSteps);
 		}
 		var timeScale = (1/60) / dt;
-		objects.forEach(function(object) {
-			if(object.onEnterFrame) object.onEnterFrame(timeScale);
-			if(object.onUpdateSim) object.onUpdateSim();
+		for(var i = 0; i < objects.length; i++) {
+			var object = objects[i];
 			if(object.body) {
 				object.mesh.position.copy(object.body.position);
 				object.mesh.quaternion.copy(object.body.quaternion);
 			}
-		});
+			if(object.onEnterFrame) object.onEnterFrame(timeScale);
+			if(object.onUpdateSim) object.onUpdateSim();
+		}
 		if(queueToRemove.length > 0) {
 			for(var i = 0; i < queueToRemove.length; i++) {
 				remove(queueToRemove[i][0], queueToRemove[i][1]);
@@ -186,7 +196,12 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	};
 
 	this.portal = portal;
-	this.player = player;
+	Object.defineProperty(this, "player", {
+		get: function() { return player; }, 
+		set: function(value) { player = value; } 
+	})
+	this.enablePlayer = enablePlayer;
+	this.disablePlayer = disablePlayer;
 
 	this.world = world;
 	this.scene = scene;

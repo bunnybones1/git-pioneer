@@ -1,7 +1,7 @@
 {
-  "name": "work-timer",
+  "name": "git-pioneer",
   "version": "1.0.0",
-  "description": "A work timer for deep work.",
+  "description": "A webGL-based tool for git management.",
   "main": "index.html",
   "private": true,
   "license": "UNLICENSED",

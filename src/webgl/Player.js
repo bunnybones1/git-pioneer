@@ -39,8 +39,6 @@ function Player(scene, camera, canvas, pointers, world) {
 	var onPlayerSizeChangedSignal = new Signal();
 	camera.near = 0.001;
 	camera.far = 40;
-	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
-	scene.fog = fog;
 	camera.updateProjectionMatrix();
 	var pointLight = new THREE.PointLight(0xffffff, 1, 1, 2);
 	camera.add(pointLight);
@@ -128,20 +126,25 @@ function Player(scene, camera, canvas, pointers, world) {
 	var rayFrom = playerBody.position;
 	var rayTo = playerBody.position.clone();
 
-	pointers.onPointerDownSignal.add(onPointerDown.bind(this));
-	pointers.onPointerUpSignal.add(onPointerUp.bind(this));
+	this.onPointerDown = onPointerDown.bind(this);
+	this.onPointerUp = onPointerUp.bind(this);
+
+	pointers.onPointerDownSignal.add(this.onPointerDown);
+	pointers.onPointerUpSignal.add(this.onPointerUp);
 
 	this.yUp = true;
 	this.keyboard = keyboard;
 	this.pointLight = pointLight;
 	this.camera = camera;
-	this.fog = fog;
+	this.fog = scene.fog;
 	this.scene = scene;
 	this.world = world;
 	this.mesh = playerMesh;
 	this.body = playerBody;
 	this.headPivot = headPivot;
 	this.bodySphereRecipe = bodySphereRecipe;
+
+	this.pointers = pointers;
 
 	this.result = result;
 	this.raycastOptions = raycastOptions;
@@ -157,10 +160,19 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.onUpdateSim = onUpdateSim.bind(this);
 	this.onEnterFrame = onEnterFrame.bind(this);
 	this.addTool = addTool.bind(this);
+	this.fog.near = this.camera.near;
+	this.fog.far = this.camera.far;
+
 
 	camera.rotation.x = Math.PI * -0.5;
 	camera.updateMatrix();
 	camera.updateMatrixWorld();
+
+}
+
+function onDestroy() {
+	this.pointers.onPointerDownSignal.remove(this.onPointerDown);
+	this.pointers.onPointerUpSignal.remove(this.onPointerUp);
 
 }
 

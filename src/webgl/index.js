@@ -22,64 +22,92 @@ function GraphGarden() {
 	var glState = viewManager.view.renderer.state;
 	var masterCamera;
 	var masterPortal;
+	var masterPlayer;
+
+	var passParams = [];
+
+	function onBasePrerender(portal, camera, stencilScene) {
+		viewManager.view.renderer.clear(false, true, true);
+		viewManager.view.renderer.render(stencilScene, masterCamera);
+		viewManager.view.renderer.clear(false, true, false);
+	}
+	function onPortaledPrerender(portal, camera, stencilScene) {
+		portal.body.position.copy(masterPortal.body.position);
+		camera.matrix.copy(masterCamera.matrixWorld);
+		camera.projectionMatrix.copy(masterCamera.projectionMatrix);
+		viewManager.view.renderer.clear(false, false, true);
+		glState.enable(gl.STENCIL_TEST);
+		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+		viewManager.view.renderer.render(stencilScene, masterCamera);
+		gl.stencilFunc(gl.EQUAL, 1, 0xff);
+		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+		viewManager.view.renderer.clear(false, true, false);
+	}
+	function onBasePostrender() {
+	}
+	function onPortaledPostrender() {
+		glState.disable(gl.STENCIL_TEST);
+	}
+
+	function swapWorlds() {
+		passParams.swap(0, 1);
+		setRenderPasses();
+	}
+
+	function setRenderPasses() {
+		viewManager.view.clearRenderPasses();
+		passParams.forEach((params, i) => {
+			if(i==0) {
+				params.worldManager.enablePlayer();
+				masterPlayer = params.worldManager.player;
+				masterCamera = params.camera;
+				masterPortal = params.portal;
+				params.camera.matrixAutoUpdate = true;
+				params.portal.onPlayerEnterSignal.add(swapWorlds);
+				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.camera, params.stencilScene);
+				params.renderPassParams[4] = onBasePostrender;
+			} else {
+				params.worldManager.disablePlayer();
+				params.worldManager.player = masterPlayer;
+				params.camera.matrixAutoUpdate = false;
+				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.camera, params.stencilScene);
+				params.renderPassParams[4] = onPortaledPostrender;
+			}
+			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
+		});
+	}
 
 	for(var i = 0; i < 2; i++) {
-		(function() {
-			var i2 = i;
-			var camera = new three.PerspectiveCamera();
-			var scene = new three.Scene();
-			scene.add(camera);
-			var worldManager = new WorldManager(viewManager.canvas, scene, camera, inputManager);
-			var stencilScene = new three.Scene();
-			var portal = worldManager.portal;
-			var portalMesh = portal.mesh;
-			scene.remove(portalMesh);
-			if(i2==0) {
-				masterCamera = camera;
-				masterPortal = portal;
-			}
-			if(i2==1) {
-				worldManager.remove(worldManager.player);
-				scene.add(camera);
-				camera.matrixAutoUpdate = false;
-			}
+		var camera = new three.PerspectiveCamera(60, undefined, 0.001, 40);
+		var scene = new three.Scene();
+		scene.add(camera);
+		var worldManager = new WorldManager(viewManager.canvas, scene, camera, inputManager);
+		var stencilScene = new three.Scene();
+		var portal = worldManager.portal;
+		var portalMesh = portal.mesh;
+		scene.remove(portalMesh);
 
-			worldManager.portal.name = "portal " + i;
-			stencilScene.add(worldManager.portal.mesh);
-			var stencilFunc = i == 0 ? gl.NOTEQUAL : gl.EQUAL;
-			scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
-			scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
-			viewManager.view.addRenderPass(
+		portal.name = "portal " + i;
+		stencilScene.add(portal.mesh);
+		scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
+		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
+		passParams.push({
+			worldManager,
+			scene,
+			camera,
+			portal,
+			stencilScene,
+			renderPassParams: [
 				scene, 
 				camera,
-				undefined, 
-				() => {
-					if(i2==0){
-						viewManager.view.renderer.clear(false, true, true);
-					} else {
-						portal.body.position.copy(masterPortal.body.position);
-						camera.matrix.copy(masterCamera.matrixWorld);
-						camera.projectionMatrix.copy(masterCamera.projectionMatrix);
-						viewManager.view.renderer.clear(false, false, true);
-						glState.enable(gl.STENCIL_TEST);
-						gl.stencilFunc(gl.ALWAYS, 1, 0xff);
-						gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-					}
-					viewManager.view.renderer.render(stencilScene, masterCamera);
-					if(i2!==0) {
-						gl.stencilFunc(stencilFunc, 1, 0xff);
-						gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-					}
-					viewManager.view.renderer.clear(false, true, false);
-				},
-				() => {
-					if(i2!==0) {
-						glState.disable(gl.STENCIL_TEST);
-					}
-				}
-			);
-		})();
+				undefined
+			]
+		});
 	}
+
+	setRenderPasses();
+	// swapWorlds();
 	this.widgetFctory = new WidgetFactory();
 	// this.worldManager.addRelativeToPlayer(this.widgetFctory.makeThing());
 
