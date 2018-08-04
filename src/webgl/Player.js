@@ -27,6 +27,7 @@ function Player(scene, camera, canvas, inputManager, world) {
 			}
 			tools.pushUnique(val);
 			_activeTool = val;
+			if(!_activeTool) return;
 			_activeTool.player = this;
 			_activeTool.onEnterFrame = _activeTool.onEnterFrameEquipped;
 			handPivot.add(_activeTool.mesh);
@@ -179,14 +180,21 @@ function copy(otherPlayer) {
 		otherNode = otherNode.parent;
 	}
 	this.crosshair.copyTransforms(otherPlayer.crosshair);
+	this.crosshair.rotation.z = Math.random() - 0.5;
+
 	this.insidePortal = otherPlayer.insidePortal;
+	this.tools = otherPlayer.tools;
+	this.activeTool = otherPlayer.activeTool;
+	this.tools.forEach(tool => tool.world = this.world);
 
 }
 
 function onDestroy() {
 	this.pointers.onPointerDownSignal.remove(this.onPointerDown);
 	this.pointers.onPointerUpSignal.remove(this.onPointerUp);
-
+	this.crosshair.parent.remove(this.crosshair);
+	this.crosshair2.parent.remove(this.crosshair2);
+	this.pointLight.parent.remove(this.pointLight);
 }
 
 function onEnterFrame(timeScale) {
