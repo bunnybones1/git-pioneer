@@ -86,8 +86,11 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	}
 
 	var player;
+	var _this = this;
 	function enablePlayer(oldPlayer) {
-		player = new Player(scene, camera, canvas, inputManager, this);
+		player = new Player(scene, camera, canvas, inputManager, _this);
+		player.homeWorld = _this;
+		player.name = "player in " + _this.name;
 		if(oldPlayer) {
 			player.copy(oldPlayer);
 		}
@@ -159,7 +162,7 @@ function WorldManager(canvas, scene, camera, inputManager) {
 
 	var i = 0;
 	for(var tool in tools){
-		add(new tools[tool](this, new cannon.Vec3(i, -1, 1)));
+		add(new tools[tool](this, new cannon.Vec3(i, -6, 1)));
 		i += 2;
 	}
 

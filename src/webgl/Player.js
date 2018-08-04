@@ -5,6 +5,7 @@ var Signal = require('signals').Signal;
 var CollisionLayers = require('CollisionLayers');
 var clamp = require('clamp');
 require('extensions/array');
+require('extensions/three');
 
 var sizeSpeedMax = 0.1;
 var sizeSpeedStep = 0.001;
@@ -160,18 +161,24 @@ function Player(scene, camera, canvas, inputManager, world) {
 	this.fog.far = this.camera.far;
 	this.firstPortalOverlap = true;
 
-
 	camera.rotation.x = Math.PI * -0.5;
 	camera.updateMatrix();
 	camera.updateMatrixWorld();
-
 }
 
 function copy(otherPlayer) {
 	this.body.position.copy(otherPlayer.body.position);
 	this.body.quaternion.copy(otherPlayer.body.quaternion);
-	this.camera.quaternion.copy(otherPlayer.camera.quaternion);
-	this.camera.matrix.copy(otherPlayer.camera.matrix);
+	var node = this.camera;
+	var otherNode = otherPlayer.camera;
+	while(node.parent) {
+		node.copyTransforms(otherNode);
+
+		node = node.parent;
+		otherNode = otherNode.parent;
+	}
+	this.crosshair.copyTransforms(otherPlayer.crosshair);
+	this.insidePortal = otherPlayer.insidePortal;
 
 }
 

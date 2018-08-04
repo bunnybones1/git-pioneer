@@ -51,8 +51,17 @@ function GraphGarden() {
 	}
 
 	function swapWorlds() {
+		passParams.forEach(params => {
+			params.portal.mesh.visible = false;
+		});
 		passParams.swap(0, 1);
 		setRenderPasses();
+	}
+
+	function showPortals() {
+		passParams.forEach(params => {
+			params.portal.mesh.visible = true;
+		});
 	}
 
 	function setRenderPasses() {
@@ -64,13 +73,16 @@ function GraphGarden() {
 				masterCamera = params.camera;
 				masterPortal = params.portal;
 				params.camera.matrixAutoUpdate = true;
-				params.portal.onPlayerEnterSignal.add(swapWorlds);
+				masterPortal.onPlayerEnterSignal.add(swapWorlds);
+				masterPortal.onPlayerExitSignal.add(showPortals);
 				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.camera, params.stencilScene);
 				params.renderPassParams[4] = onBasePostrender;
 			} else {
 				params.worldManager.disablePlayer();
 				params.worldManager.player = masterPlayer;
 				params.camera.matrixAutoUpdate = false;
+				params.portal.onPlayerEnterSignal.remove(swapWorlds);
+				params.portal.onPlayerExitSignal.remove(showPortals);
 				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.camera, params.stencilScene);
 				params.renderPassParams[4] = onPortaledPostrender;
 			}
@@ -87,9 +99,11 @@ function GraphGarden() {
 		var portal = worldManager.portal;
 		var portalMesh = portal.mesh;
 		scene.remove(portalMesh);
+		stencilScene.add(portalMesh);	
 
-		portal.name = "portal " + i;
-		stencilScene.add(portal.mesh);
+		worldManager.name = "world " + (i+1);
+		scene.name = "scene " + (i+1);
+		portal.name = "portal " + (i+1);
 		scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
 		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
 		passParams.push({
