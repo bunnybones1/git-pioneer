@@ -102,12 +102,13 @@ function Player(scene, camera, canvas, inputManager, world) {
 	camera.add(crosshair2);
 	crosshair2.position.z = -2;
 
+	var _this = this;
 	playerBody.addEventListener("collide", function(collision) {
 		if(collision.target == playerBody && collision.body.interactiveObject != null) {
 			var interactiveObject = collision.body.interactiveObject;
 			if(interactiveObject.type == "tool") {
 				world.remove(interactiveObject.object, function() {
-					collision.body.player.addTool(interactiveObject.object);
+					addTool.call(_this, interactiveObject.object);
 				});
 			}
 		}
