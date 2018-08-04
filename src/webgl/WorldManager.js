@@ -17,8 +17,6 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
 	scene.fog = fog;
 
-	var pointers = inputManager.pointers;
-
 	var planeMaterial = new three.MeshPhongMaterial({
 		map: new CheckerboardTexture(0x6f4f3f, 0x7f5f4f, 1000, 1000)
 	});
@@ -88,14 +86,18 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	}
 
 	var player;
-	function enablePlayer() {
-		player = new Player(scene, camera, canvas, pointers, this);
+	function enablePlayer(oldPlayer) {
+		player = new Player(scene, camera, canvas, inputManager, this);
+		if(oldPlayer) {
+			player.copy(oldPlayer);
+		}
 		add(player);
 	}
 	function disablePlayer() {
 		if(!player) return;
 		scene.add(camera);
 		remove(player);
+		player.onDestroy();
 		player = null;
 	}
 

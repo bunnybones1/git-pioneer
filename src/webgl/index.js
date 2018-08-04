@@ -59,7 +59,7 @@ function GraphGarden() {
 		viewManager.view.clearRenderPasses();
 		passParams.forEach((params, i) => {
 			if(i==0) {
-				params.worldManager.enablePlayer();
+				params.worldManager.enablePlayer(masterPlayer);
 				masterPlayer = params.worldManager.player;
 				masterCamera = params.camera;
 				masterPortal = params.portal;

@@ -1,5 +1,4 @@
 var three = require('three');
-var FPSController = require('threejs-camera-controller-first-person-desktop');
 var Crosshair = require('threejs-gui-crosshair');
 var CANNON = require('cannon');
 var Signal = require('signals').Signal;
@@ -10,7 +9,7 @@ require('extensions/array');
 var sizeSpeedMax = 0.1;
 var sizeSpeedStep = 0.001;
 
-function Player(scene, camera, canvas, pointers, world) {
+function Player(scene, camera, canvas, inputManager, world) {
 	this.playerSize = 1;
 	this.sizeSpeed = 0;
 
@@ -47,14 +46,9 @@ function Player(scene, camera, canvas, pointers, world) {
 	camera.position.set(0, 0, 0);
 	camera.lookAt(new THREE.Vector3());
 
-	var fpsController = new FPSController(camera, canvas, 
-		{
-			upAxis: 'z',
-			yUp: false,
-			movementSpeed: 0.1
-		}
-	);
-	var keyboard = fpsController.keyboard;
+	inputManager.fpsController.camera = camera;
+	var pointers = inputManager.pointers;
+	var keyboard = inputManager.fpsController.keyboard;
 
 
 
@@ -150,23 +144,34 @@ function Player(scene, camera, canvas, pointers, world) {
 	this.raycastOptions = raycastOptions;
 	this.rayFrom = rayFrom;
 	this.rayTo = rayTo;
-	this.fpsController = fpsController;
+	this.fpsController = inputManager.fpsController;
 	this.crosshair = crosshair;
 	this.crosshair2 = crosshair2;
 	this.onPlayerSizeChangedSignal = onPlayerSizeChangedSignal;
 
 	this.tools = tools;
 
+	this.copy = copy.bind(this);
+	this.onDestroy = onDestroy.bind(this);
 	this.onUpdateSim = onUpdateSim.bind(this);
 	this.onEnterFrame = onEnterFrame.bind(this);
 	this.addTool = addTool.bind(this);
 	this.fog.near = this.camera.near;
 	this.fog.far = this.camera.far;
+	this.firstPortalOverlap = true;
 
 
 	camera.rotation.x = Math.PI * -0.5;
 	camera.updateMatrix();
 	camera.updateMatrixWorld();
+
+}
+
+function copy(otherPlayer) {
+	this.body.position.copy(otherPlayer.body.position);
+	this.body.quaternion.copy(otherPlayer.body.quaternion);
+	this.camera.quaternion.copy(otherPlayer.camera.quaternion);
+	this.camera.matrix.copy(otherPlayer.camera.matrix);
 
 }
 
