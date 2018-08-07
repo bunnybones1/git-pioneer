@@ -4,7 +4,7 @@ var cannon = require('cannon');
 var urlParam = require('urlparam');
 var clamp = require('clamp');
 var Signal = require('signals').Signal;
-var Player = require('./Player');
+var Player = require('gameObjects/Camera');
 
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
@@ -88,7 +88,7 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	var player;
 	var _this = this;
 	function enablePlayer(oldPlayer) {
-		player = new Player(scene, camera, canvas, inputManager, _this);
+		player = new Player(scene, camera, inputManager, _this);
 		player.homeWorld = _this;
 		player.name = "player in " + _this.name;
 		if(oldPlayer) {
@@ -172,8 +172,8 @@ function WorldManager(canvas, scene, camera, inputManager) {
 
 	// Start the simulation loop 
 	var lastTime;
-	function simloop(time){
-		requestAnimationFrame(simloop);
+	var timeScale;
+	function simulatePhysics(time){
 		if(lastTime === undefined){
 			lastTime = time;
 		}
@@ -181,14 +181,9 @@ function WorldManager(canvas, scene, camera, inputManager) {
 		if(dt > 0) {
 			world.step(fixedTimeStep, dt, maxSubSteps);
 		}
-		var timeScale = (1/60) / dt;
+		timeScale = (1/60) / dt;
 		for(var i = 0; i < objects.length; i++) {
 			var object = objects[i];
-			if(object.body) {
-				object.mesh.position.copy(object.body.position);
-				object.mesh.quaternion.copy(object.body.quaternion);
-			}
-			if(object.onEnterFrame) object.onEnterFrame(timeScale);
 			if(object.onUpdateSim) object.onUpdateSim();
 		}
 		if(queueToRemove.length > 0) {
@@ -199,6 +194,18 @@ function WorldManager(canvas, scene, camera, inputManager) {
 		}
 		lastTime = time;
 	};
+
+	function onEnterFrame() {
+		for(var i = 0; i < objects.length; i++) {
+			var object = objects[i];
+			if(object.body) {
+				object.mesh.position.copy(object.body.position);
+				object.mesh.quaternion.copy(object.body.quaternion);
+			}
+			if(object.onEnterFrame) object.onEnterFrame(timeScale);
+		}
+
+	}
 
 	this.portal = portal;
 	Object.defineProperty(this, "player", {
@@ -217,7 +224,8 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	this.destroy = requestDestroy.bind(this);
 	this.makeBall = makeBall.bind(this);
 	this.makeHitEffect = makeHitEffect.bind(this);
-	requestAnimationFrame(simloop);
+	this.onEnterFrame = onEnterFrame.bind(this);
+	this.simulatePhysics = simulatePhysics.bind(this);
 }
 
 module.exports = WorldManager;

@@ -3,10 +3,8 @@ var FPSController = require('threejs-camera-controller-first-person-desktop');
 
 function InputManager(canvas) {
 	var pointers = new Pointers(canvas);
-	var fpsController = new FPSController(null, canvas, 
+	var fpsController = new FPSController(canvas, 
 		{
-			upAxis: 'z',
-			yUp: false,
 			movementSpeed: 0.1
 		}
 	);

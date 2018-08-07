@@ -10,7 +10,7 @@ var GitVisualizer = require('./GitVisualizer');
 var CodePreviewer = require('./CodePreviewer');
 var CheckerboardTexture = require('threejs-texture-checkerboard');
 
-
+require('extensions/function');
 
 
 function GraphGarden() {
@@ -50,9 +50,9 @@ function GraphGarden() {
 		glState.disable(gl.STENCIL_TEST);
 	}
 
-	function swapWorlds() {
+	function swapWorlds(backwards = false) {
 		passParams.forEach(params => {
-			params.portal.mesh.visible = false;
+			params.portal.mesh.visible = backwards;
 		});
 		passParams.swap(0, 1);
 		setRenderPasses();
@@ -86,6 +86,7 @@ function GraphGarden() {
 				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.camera, params.stencilScene);
 				params.renderPassParams[4] = onPortaledPostrender;
 			}
+			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
 			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
 		});
 	}
