@@ -1,8 +1,8 @@
 var three = require('three');
-var Crosshair = require('threejs-gui-crosshair');
 var CANNON = require('cannon');
 var Signal = require('signals').Signal;
 var CollisionLayers = require('CollisionLayers');
+var Crosshair = require('threejs-gui-crosshair');
 var clamp = require('clamp');
 require('extensions/array');
 require('extensions/three');
@@ -10,7 +10,7 @@ require('extensions/three');
 var sizeSpeedMax = 0.1;
 var sizeSpeedStep = 0.001;
 
-function Player(scene, camera, canvas, inputManager, world) {
+function Player(scene, camera, inputManager, world) {
 	this.playerSize = 1;
 	this.sizeSpeed = 0;
 
@@ -180,7 +180,6 @@ function copy(otherPlayer) {
 		otherNode = otherNode.parent;
 	}
 	this.crosshair.copyTransforms(otherPlayer.crosshair);
-	this.crosshair.rotation.z = Math.random() - 0.5;
 
 	this.insidePortal = otherPlayer.insidePortal;
 	this.tools = otherPlayer.tools;
