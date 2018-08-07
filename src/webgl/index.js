@@ -50,9 +50,9 @@ function GraphGarden() {
 		glState.disable(gl.STENCIL_TEST);
 	}
 
-	function swapWorlds() {
+	function swapWorlds(backwards = false) {
 		passParams.forEach(params => {
-			params.portal.mesh.visible = false;
+			params.portal.mesh.visible = backwards;
 		});
 		passParams.swap(0, 1);
 		setRenderPasses();

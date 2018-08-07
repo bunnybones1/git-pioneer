@@ -180,7 +180,6 @@ function copy(otherPlayer) {
 		otherNode = otherNode.parent;
 	}
 	this.crosshair.copyTransforms(otherPlayer.crosshair);
-	this.crosshair.rotation.z = Math.random() - 0.5;
 
 	this.insidePortal = otherPlayer.insidePortal;
 	this.tools = otherPlayer.tools;
