@@ -13,7 +13,7 @@ var Portal = require('gameObjects/Portal');
 var geomLib = require('geometry/lib');
 var CollisionLayers = require('CollisionLayers');
 
-function WorldManager(canvas, scene, camera, inputManager) {
+function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
 	scene.fog = fog;
 
@@ -204,7 +204,10 @@ function WorldManager(canvas, scene, camera, inputManager) {
 			}
 			if(object.onEnterFrame) object.onEnterFrame(timeScale);
 		}
-
+	}
+	function onExitFrame() {
+		renderer;
+		debugger;
 	}
 
 	this.portal = portal;
@@ -226,6 +229,7 @@ function WorldManager(canvas, scene, camera, inputManager) {
 	this.makeHitEffect = makeHitEffect.bind(this);
 	this.onEnterFrame = onEnterFrame.bind(this);
 	this.simulatePhysics = simulatePhysics.bind(this);
+	this.onExitFrame = onExitFrame.bind(this);
 }
 
 module.exports = WorldManager;

@@ -87,6 +87,7 @@ function GraphGarden() {
 				params.renderPassParams[4] = onPortaledPostrender;
 			}
 			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
+			params.renderPassParams[4] = params.renderPassParams[4].decorateBefore(params.worldManager.onExitFrame);
 			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
 		});
 	}
@@ -95,7 +96,7 @@ function GraphGarden() {
 		var camera = new three.PerspectiveCamera(60, undefined, 0.001, 40);
 		var scene = new three.Scene();
 		scene.add(camera);
-		var worldManager = new WorldManager(viewManager.canvas, scene, camera, inputManager);
+		var worldManager = new WorldManager(viewManager.canvas, scene, camera, inputManager, viewManager.view.renderer);
 		var stencilScene = new three.Scene();
 		var portal = worldManager.portal;
 		var portalMesh = portal.mesh;

@@ -35,7 +35,7 @@ function Player(scene, camera, inputManager, world) {
 			_activeTool.mesh.rotation.set(0, 0, 0);
 			_activeTool.mesh.position.set(0, 0, 0);
 		}
-	})
+	});
 	
 	var onPlayerSizeChangedSignal = new Signal();
 	camera.near = 0.001;
