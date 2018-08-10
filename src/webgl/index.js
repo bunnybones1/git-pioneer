@@ -17,6 +17,7 @@ function GraphGarden() {
 	var _this = this;
 	var viewManager = new ViewManager();
 	var inputManager = new InputManager(viewManager.canvas);
+	viewManager.view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
 
 	var gl = viewManager.view.renderer.context;
 	var glState = viewManager.view.renderer.state;

@@ -4,7 +4,8 @@ var cannon = require('cannon');
 var urlParam = require('urlparam');
 var clamp = require('clamp');
 var Signal = require('signals').Signal;
-var Player = require('gameObjects/Camera');
+var Camera = require('gameObjects/Camera');
+var Player = require('gameObjects/Player');
 
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
@@ -88,7 +89,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var player;
 	var _this = this;
 	function enablePlayer(oldPlayer) {
-		player = new Player(scene, camera, inputManager, _this);
+		player = new Camera(scene, camera, inputManager, _this);
 		player.homeWorld = _this;
 		player.name = "player in " + _this.name;
 		if(oldPlayer) {
@@ -207,7 +208,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 	function onExitFrame() {
 		renderer;
-		debugger;
+		// debugger;
 	}
 
 	this.portal = portal;
