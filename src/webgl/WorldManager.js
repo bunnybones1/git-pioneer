@@ -4,7 +4,7 @@ var cannon = require('cannon');
 var urlParam = require('urlparam');
 var clamp = require('clamp');
 var Signal = require('signals').Signal;
-var Camera = require('gameObjects/Camera');
+var UserFpsStandard = require('gameObjects/UserFpsStandard');
 var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
 
 var tools = require('gameObjects/tools');
@@ -89,7 +89,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var player;
 	var _this = this;
 	function enablePlayer(oldPlayer) {
-		player = new Camera(scene, camera, inputManager, _this);
+		player = new UserFpsStandard(scene, camera, inputManager, _this);
 		player.homeWorld = _this;
 		player.name = "player in " + _this.name;
 		if(oldPlayer) {
