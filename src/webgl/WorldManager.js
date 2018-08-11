@@ -96,6 +96,9 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			player.copy(oldPlayer);
 		}
 		add(player);
+		var hominid = new SimpleHominidBody(scene, camera, inputManager, _this);
+		hominid.user = player;
+		add(hominid);
 	}
 	function disablePlayer() {
 		if(!player) return;
@@ -167,7 +170,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		i += 2;
 	}
 
-	var portal = new Portal(this, new cannon.Vec3(0, 1, 1));
+	var portal = new Portal(this, new cannon.Vec3(0, 1, 1.5));
 	add(portal);
 
 
