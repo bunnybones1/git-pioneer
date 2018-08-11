@@ -77,6 +77,7 @@ function GraphGarden() {
 				params.worldManager.add(userHominid);
 				params.worldManager.userHead = userHead;
 				userHead.homeWorld = params.worldManager;
+				userHominid.world = params.worldManager;
 				masterCamera = params.camera;
 				masterPortal = params.portal;
 				params.camera.matrixAutoUpdate = true;
