@@ -17,6 +17,8 @@ var CollisionLayers = require('CollisionLayers');
 function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
 	var physicsDebugScene = new three.Scene();
+	physicsDebugScene.name = "debugPhysics" + Math.random();
+
 	scene.fog = fog;
 
 	var planeMaterial = new three.MeshPhongMaterial({
@@ -88,7 +90,13 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 	function remove(object, callback) {
 		scene.remove(object.mesh);
-		if(object.body) world.removeBody(object.body);
+		if(object.body) {
+			object.body.shapes.forEach(shape => {
+				physicsDebugScene.remove(shape.debugMesh);
+			});
+
+			world.removeBody(object.body);
+		}
 		var index = objects.indexOf(object);
 		if(index != -1) {
 			objects.splice(index, 1);
@@ -96,26 +104,30 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		if(callback) callback();
 	}
 
-	var player;
+	var userHead;
 	var _this = this;
 	function enablePlayer(oldPlayer) {
-		player = new UserFpsStandard(scene, camera, inputManager, _this);
-		player.homeWorld = _this;
-		player.name = "player in " + _this.name;
+		userHead = new UserFpsStandard(scene, camera, inputManager, _this);
+		userHead.homeWorld = _this;
+		userHead.name = "userHead in " + _this.name;
 		if(oldPlayer) {
-			player.copy(oldPlayer);
+			userHead.copy(oldPlayer);
 		}
-		add(player);
-		var hominid = new SimpleHominidBody(scene, camera, inputManager, _this);
-		hominid.user = player;
-		add(hominid);
+		add(userHead);
+		var userHominid = new SimpleHominidBody(scene, camera, inputManager, _this);
+		userHominid.user = userHead;
+		add(userHominid);
+		return {
+			head: userHead,
+			hominid: userHominid
+		};
 	}
 	function disablePlayer() {
-		if(!player) return;
+		if(!userHead) return;
 		scene.add(camera);
-		remove(player);
-		player.onDestroy();
-		player = null;
+		remove(userHead);
+		userHead.onDestroy();
+		userHead = null;
 	}
 
 
@@ -166,11 +178,11 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		add(hit);
 	}
 
-	function weaponFireMakeBall(pos, playerSize) {
-		makeBall(pos.x, pos.y, pos.z, playerSize);
+	function weaponFireMakeBall(pos, userHeadSize) {
+		makeBall(pos.x, pos.y, pos.z, userHeadSize);
 	}
 
-	// player.addTool({
+	// userHead.addTool({
 	// 	primaryFireStart: weaponFireMakeBall
 	// });
 
@@ -237,9 +249,9 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 
 	this.portal = portal;
-	Object.defineProperty(this, "player", {
-		get: function() { return player; }, 
-		set: function(value) { player = value; } 
+	Object.defineProperty(this, "userHead", {
+		get: function() { return userHead; }, 
+		set: function(value) { userHead = value; } 
 	})
 	this.enablePlayer = enablePlayer;
 	this.disablePlayer = disablePlayer;

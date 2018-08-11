@@ -23,7 +23,8 @@ function GraphGarden() {
 	var glState = viewManager.view.renderer.state;
 	var masterCamera;
 	var masterPortal;
-	var masterPlayer;
+	var masterUserHead;
+	var masterUserHominid;
 
 	var passParams = [];
 
@@ -67,10 +68,13 @@ function GraphGarden() {
 
 	function setRenderPasses() {
 		viewManager.view.clearRenderPasses();
-		passParams.forEach((params, i) => {
+		for (var i = (passParams.length - 1); i>=0;i--) {
+			var params = passParams[i];
 			if(i==0) {
-				params.worldManager.enablePlayer(masterPlayer);
-				masterPlayer = params.worldManager.player;
+				params.worldManager.add(masterUserHead);
+				params.worldManager.add(masterUserHominid);
+				params.worldManager.userHead = masterUserHead;
+				masterUserHead.homeWorld = params.worldManager;
 				masterCamera = params.camera;
 				masterPortal = params.portal;
 				params.camera.matrixAutoUpdate = true;
@@ -79,8 +83,9 @@ function GraphGarden() {
 				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.camera, params.stencilScene);
 				params.renderPassParams[4] = onBasePostrender;
 			} else {
-				params.worldManager.disablePlayer();
-				params.worldManager.player = masterPlayer;
+				params.worldManager.remove(masterUserHead);
+				params.worldManager.remove(masterUserHominid);
+				params.worldManager.userHead = null;
 				params.camera.matrixAutoUpdate = false;
 				params.portal.onPlayerEnterSignal.remove(swapWorlds);
 				params.portal.onPlayerExitSignal.remove(showPortals);
@@ -89,8 +94,11 @@ function GraphGarden() {
 			}
 			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
 			params.renderPassParams[4] = params.renderPassParams[4].decorateBefore(params.worldManager.onExitFrame);
+		}
+		for (var i = 0; i<passParams.length;i++) {
+			var params = passParams[i];
 			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
-		});
+		}
 	}
 
 	for(var i = 0; i < 2; i++) {
@@ -122,6 +130,10 @@ function GraphGarden() {
 			]
 		});
 	}
+
+	var user = passParams[0].worldManager.enablePlayer();
+	masterUserHead = user.head;
+	masterUserHominid = user.hominid;
 
 	setRenderPasses();
 	// swapWorlds();
