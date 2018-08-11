@@ -182,13 +182,13 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			lastTime = time;
 		}
 		var dt = (time - lastTime) * 0.001;
-		if(dt > 0) {
-			world.step(fixedTimeStep, dt, maxSubSteps);
-		}
-		timeScale = (1/60) / dt;
+		timeScale = Math.min(1 / ((1/60) / dt), 10);
 		for(var i = 0; i < objects.length; i++) {
 			var object = objects[i];
-			if(object.onUpdateSim) object.onUpdateSim();
+			if(object.onUpdateSim) object.onUpdateSim(timeScale);
+		}
+		if(dt > 0) {
+			world.step(fixedTimeStep, dt, maxSubSteps);
 		}
 		if(queueToRemove.length > 0) {
 			for(var i = 0; i < queueToRemove.length; i++) {
