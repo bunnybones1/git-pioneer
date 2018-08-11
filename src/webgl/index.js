@@ -9,6 +9,8 @@ var GitManager = require('./GitManager');
 var GitVisualizer = require('./GitVisualizer');
 var CodePreviewer = require('./CodePreviewer');
 var CheckerboardTexture = require('threejs-texture-checkerboard');
+var UserFpsStandard = require('gameObjects/UserFpsStandard');
+var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
 
 require('extensions/function');
 
@@ -23,8 +25,8 @@ function GraphGarden() {
 	var glState = viewManager.view.renderer.state;
 	var masterCamera;
 	var masterPortal;
-	var masterUserHead;
-	var masterUserHominid;
+	var userHead;
+	var userHominid;
 
 	var passParams = [];
 
@@ -71,10 +73,10 @@ function GraphGarden() {
 		for (var i = (passParams.length - 1); i>=0;i--) {
 			var params = passParams[i];
 			if(i==0) {
-				params.worldManager.add(masterUserHead);
-				params.worldManager.add(masterUserHominid);
-				params.worldManager.userHead = masterUserHead;
-				masterUserHead.homeWorld = params.worldManager;
+				params.worldManager.add(userHead);
+				params.worldManager.add(userHominid);
+				params.worldManager.userHead = userHead;
+				userHead.homeWorld = params.worldManager;
 				masterCamera = params.camera;
 				masterPortal = params.portal;
 				params.camera.matrixAutoUpdate = true;
@@ -83,8 +85,8 @@ function GraphGarden() {
 				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.camera, params.stencilScene);
 				params.renderPassParams[4] = onBasePostrender;
 			} else {
-				params.worldManager.remove(masterUserHead);
-				params.worldManager.remove(masterUserHominid);
+				params.worldManager.remove(userHead);
+				params.worldManager.remove(userHominid);
 				params.worldManager.userHead = null;
 				params.camera.matrixAutoUpdate = false;
 				params.portal.onPlayerEnterSignal.remove(swapWorlds);
@@ -95,7 +97,7 @@ function GraphGarden() {
 			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
 			params.renderPassParams[4] = params.renderPassParams[4].decorateBefore(params.worldManager.onExitFrame);
 		}
-		for (var i = 0; i<passParams.length;i++) {
+		for (var i = 0; i < passParams.length; i++) {
 			var params = passParams[i];
 			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
 		}
@@ -130,10 +132,16 @@ function GraphGarden() {
 			]
 		});
 	}
+	var scene = passParams[0].scene;
+	var camera = passParams[0].camera;
+	var world = passParams[0].worldManager;
 
-	var user = passParams[0].worldManager.enablePlayer();
-	masterUserHead = user.head;
-	masterUserHominid = user.hominid;
+	userHead = new UserFpsStandard(scene, camera, inputManager, world);
+	userHead.homeWorld = world;
+	userHead.name = "userHead";
+	userHominid = new SimpleHominidBody(scene, camera, inputManager, world);
+	userHominid.world = world;
+	userHominid.user = userHead;
 
 	setRenderPasses();
 	// swapWorlds();

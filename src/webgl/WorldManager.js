@@ -4,8 +4,6 @@ var cannon = require('cannon');
 var urlParam = require('urlparam');
 var clamp = require('clamp');
 var Signal = require('signals').Signal;
-var UserFpsStandard = require('gameObjects/UserFpsStandard');
-var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
 
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
@@ -102,32 +100,6 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			objects.splice(index, 1);
 		}
 		if(callback) callback();
-	}
-
-	var userHead;
-	var _this = this;
-	function enablePlayer(oldPlayer) {
-		userHead = new UserFpsStandard(scene, camera, inputManager, _this);
-		userHead.homeWorld = _this;
-		userHead.name = "userHead in " + _this.name;
-		if(oldPlayer) {
-			userHead.copy(oldPlayer);
-		}
-		add(userHead);
-		var userHominid = new SimpleHominidBody(scene, camera, inputManager, _this);
-		userHominid.user = userHead;
-		add(userHominid);
-		return {
-			head: userHead,
-			hominid: userHominid
-		};
-	}
-	function disablePlayer() {
-		if(!userHead) return;
-		scene.add(camera);
-		remove(userHead);
-		userHead.onDestroy();
-		userHead = null;
 	}
 
 
@@ -249,12 +221,6 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 
 	this.portal = portal;
-	Object.defineProperty(this, "userHead", {
-		get: function() { return userHead; }, 
-		set: function(value) { userHead = value; } 
-	})
-	this.enablePlayer = enablePlayer;
-	this.disablePlayer = disablePlayer;
 
 	this.world = world;
 	this.scene = scene;
