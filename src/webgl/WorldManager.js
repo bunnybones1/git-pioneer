@@ -61,10 +61,12 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			world.addBody(object.body);
 			var color = Math.random() * 0xffffff;
 			object.body.shapes.forEach(shape => {
-				var mesh = new three.Mesh(geomLib.sphere(shape.radius, 32, 16), new three.MeshBasicMaterial({wireframe: true, color: color}));
-				mesh.matrixAutoUpdate = false;
-				shape.debugMesh = mesh;
-				physicsDebugScene.add(mesh);
+				if(!shape.debugMesh) {
+					var mesh = new three.Mesh(geomLib.sphere(shape.radius, 32, 16), new three.MeshBasicMaterial({wireframe: true, color: color}));
+					mesh.matrixAutoUpdate = false;
+					shape.debugMesh = mesh;
+				}
+				physicsDebugScene.add(shape.debugMesh);
 			});
 		}
 		objects.push(object);
