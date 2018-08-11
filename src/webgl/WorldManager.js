@@ -16,6 +16,7 @@ var CollisionLayers = require('CollisionLayers');
 
 function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
+	var physicsDebugScene = new three.Scene();
 	scene.fog = fog;
 
 	var planeMaterial = new three.MeshPhongMaterial({
@@ -56,7 +57,16 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	function add(object) {
 		scene.add(object.mesh);
-		if(object.body) world.addBody(object.body);
+		if(object.body) {
+			world.addBody(object.body);
+			var color = Math.random() * 0xffffff;
+			object.body.shapes.forEach(shape => {
+				var mesh = new three.Mesh(geomLib.sphere(shape.radius, 32, 16), new three.MeshBasicMaterial({wireframe: true, color: color}));
+				mesh.matrixAutoUpdate = false;
+				shape.debugMesh = mesh;
+				physicsDebugScene.add(mesh);
+			});
+		}
 		objects.push(object);
 	}
 	var queueToRemove = [];
@@ -166,7 +176,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	var i = 0;
 	for(var tool in tools){
-		add(new tools[tool](this, new cannon.Vec3(i, -6, 1)));
+		add(new tools[tool](this, new cannon.Vec3(i, -6 + Math.random(), 1)));
 		i += 2;
 	}
 
@@ -209,9 +219,21 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			if(object.onEnterFrame) object.onEnterFrame(timeScale);
 		}
 	}
+
+	var defaultSize = new three.Vector3(1, 1, 1);
 	function onExitFrame() {
-		renderer;
-		// debugger;
+		world.bodies.forEach(body => {
+			body.shapes.forEach((shape, i) => {
+				if(shape.debugMesh) {
+					shape.debugMesh.matrix.compose(body.position.toThree(), body.quaternion.toThree(), defaultSize);
+					var offsetMatrix = new three.Matrix4();
+					var offset = body.shapeOffsets[i];
+					offsetMatrix.makeTranslation(offset.x, offset.y, offset.z);
+					shape.debugMesh.matrix.multiply(offsetMatrix);
+				}
+			});
+		});
+		renderer.render(physicsDebugScene, camera);
 	}
 
 	this.portal = portal;
