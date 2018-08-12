@@ -7,7 +7,6 @@ var Signal = require('signals').Signal;
 
 var tools = require('gameObjects/tools');
 var effects = require('gameObjects/effects');
-var Portal = require('gameObjects/Portal');
 
 var geomLib = require('geometry/lib');
 var CollisionLayers = require('CollisionLayers');
@@ -175,10 +174,6 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		i += 2;
 	}
 
-	var portal = new Portal(new cannon.Vec3(0, 1, 1.5));
-	portal.world = this;
-	add(portal);
-
 
 	// Start the simulation loop 
 	var lastTime;
@@ -233,9 +228,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		});
 		renderer.render(physicsDebugScene, camera);
 	}
-
-	this.portal = portal;
-
+	
 	this.world = world;
 	this.scene = scene;
 

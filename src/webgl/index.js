@@ -1,5 +1,6 @@
 THREE = require('three');
 var three = require('three');
+var cannon = require('cannon');
 
 var ViewManager = require('./ViewManager');
 var InputManager = require('./InputManager');
@@ -11,6 +12,7 @@ var CodePreviewer = require('./CodePreviewer');
 var CheckerboardTexture = require('threejs-texture-checkerboard');
 var UserFpsStandard = require('gameObjects/UserFpsStandard');
 var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
+var Portal = require('gameObjects/Portal');
 
 require('extensions/function');
 
@@ -122,7 +124,12 @@ function GraphGarden() {
 		var scene = new three.Scene();
 		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, viewManager.view.renderer);
 		var stencilScene = new three.Scene();
-		var portal = worldManager.portal;
+
+		var portal = new Portal(new cannon.Vec3(0, 1, 1.5));
+		portal.world = worldManager;
+		worldManager.add(portal);
+		worldManager.portal = portal;
+		
 		var portalMesh = portal.mesh;
 		scene.remove(portalMesh);
 		stencilScene.add(portalMesh);	
