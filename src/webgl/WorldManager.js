@@ -63,7 +63,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			color.setHSL(Math.random(), 1, 0.8);
 			object.body.shapes.forEach(shape => {
 				if(!shape.debugMesh) {
-					var geom = geomLib.sphereHelper(shape.radius, 16);
+					var geom = geomLib.sphereHelper(1, 16);
 					var mat = new three.LineBasicMaterial({
 						color: color
 					});
@@ -175,7 +175,8 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		i += 2;
 	}
 
-	var portal = new Portal(this, new cannon.Vec3(0, 1, 1.5));
+	var portal = new Portal(new cannon.Vec3(0, 1, 1.5));
+	portal.world = this;
 	add(portal);
 
 
@@ -215,12 +216,14 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		}
 	}
 
-	var defaultSize = new three.Vector3(1, 1, 1);
+	var size = new three.Vector3(1, 1, 1);
 	function onExitFrame() {
 		world.bodies.forEach(body => {
 			body.shapes.forEach((shape, i) => {
 				if(shape.debugMesh) {
-					shape.debugMesh.matrix.compose(body.position.toThree(), body.quaternion.toThree(), defaultSize);
+					var r = shape.radius;
+					size.set(r, r, r);
+					shape.debugMesh.matrix.compose(body.position.toThree(), body.quaternion.toThree(), size);
 					var offsetMatrix = new three.Matrix4();
 					var offset = body.shapeOffsets[i];
 					offsetMatrix.makeTranslation(offset.x, offset.y, offset.z);

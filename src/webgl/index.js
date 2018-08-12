@@ -88,26 +88,29 @@ function GraphGarden() {
 		viewManager.view.clearRenderPasses();
 		for (var i = (passParams.length - 1); i>=0;i--) {
 			var params = passParams[i];
+			var portal = params.portal;
+			var worldMan = params.worldManager;
+			var renderPassParams = params.renderPassParams;
 			if(i==0) {
-				params.worldManager.add(userHead);
-				params.worldManager.add(userHominid);
-				params.worldManager.userHead = userHead;
-				userHominid.world = params.worldManager;
-				params.portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
-				params.portal.onPlayerExitSignal.add(enqueueShowPortals);
-				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.stencilScene);
-				params.renderPassParams[4] = onBasePostrender;
+				worldMan.add(userHead);
+				worldMan.add(userHominid);
+				worldMan.userHead = userHead;
+				userHominid.world = worldMan;
+				portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
+				portal.onPlayerExitSignal.add(enqueueShowPortals);
+				renderPassParams[3] = onBasePrerender.bind(null, portal, params.stencilScene);
+				renderPassParams[4] = onBasePostrender;
 			} else {
-				params.worldManager.remove(userHead, null, true);
-				params.worldManager.remove(userHominid, null, true);
-				params.worldManager.userHead = null;
-				params.portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
-				params.portal.onPlayerExitSignal.remove(enqueueShowPortals);
-				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.stencilScene);
-				params.renderPassParams[4] = onPortaledPostrender;
+				worldMan.remove(userHead, null, true);
+				worldMan.remove(userHominid, null, true);
+				worldMan.userHead = null;
+				portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
+				portal.onPlayerExitSignal.remove(enqueueShowPortals);
+				renderPassParams[3] = onPortaledPrerender.bind(null, portal, params.stencilScene);
+				renderPassParams[4] = onPortaledPostrender;
 			}
-			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
-			params.renderPassParams[4] = params.renderPassParams[4].decorateBefore(params.worldManager.onExitFrame);
+			renderPassParams[3] = renderPassParams[3].decorateBefore(worldMan.onEnterFrame).decorateBefore(worldMan.simulatePhysics);
+			renderPassParams[4] = renderPassParams[4].decorateBefore(worldMan.onExitFrame);
 		}
 		for (var i = 0; i < passParams.length; i++) {
 			var params = passParams[i];
