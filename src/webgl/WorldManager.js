@@ -59,10 +59,13 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		scene.add(object.mesh);
 		if(object.body) {
 			world.addBody(object.body);
-			var color = Math.random() * 0xffffff;
+			var color = new three.Color();
+			color.setHSL(Math.random(), 1, 0.8);
 			object.body.shapes.forEach(shape => {
 				if(!shape.debugMesh) {
-					var mesh = new three.Mesh(geomLib.sphere(shape.radius, 32, 16), new three.MeshBasicMaterial({wireframe: true, color: color}));
+					var geom = geomLib.sphereHelper(shape.radius, 16);
+					var mat = new three.LineBasicMaterial({wireframe: true, color: color});
+					var mesh = new three.Line(geom, mat);
 					mesh.matrixAutoUpdate = false;
 					shape.debugMesh = mesh;
 				}
