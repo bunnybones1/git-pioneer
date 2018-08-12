@@ -13,6 +13,7 @@ var CheckerboardTexture = require('threejs-texture-checkerboard');
 var UserFpsStandard = require('gameObjects/UserFpsStandard');
 var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
 var Portal = require('gameObjects/Portal');
+var PortalLink = require('gameObjects/PortalLink');
 
 require('extensions/function');
 
@@ -69,7 +70,9 @@ function GraphGarden() {
 
 	function swapWorlds(backwards = false) {
 		passParams.forEach(params => {
-			params.portal.mesh.visible = backwards;
+			params.portals.forEach(portal => {
+				portal.mesh.visible = backwards;
+			});
 		});
 		passParams.swap(0, 1);
 		setRenderPasses();
@@ -82,7 +85,9 @@ function GraphGarden() {
 
 	function showPortals() {
 		passParams.forEach(params => {
-			params.portal.mesh.visible = true;
+			params.portals.forEach(portal => {
+				portal.mesh.visible = true;
+			});
 		});
 	}
 
@@ -90,7 +95,7 @@ function GraphGarden() {
 		viewManager.view.clearRenderPasses();
 		for (var i = (passParams.length - 1); i>=0;i--) {
 			var params = passParams[i];
-			var portal = params.portal;
+			var portals = params.portals;
 			var worldMan = params.worldManager;
 			var renderPassParams = params.renderPassParams;
 			if(i==0) {
@@ -98,16 +103,20 @@ function GraphGarden() {
 				worldMan.add(userHominid);
 				worldMan.userHead = userHead;
 				userHominid.world = worldMan;
-				portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
-				portal.onPlayerExitSignal.add(enqueueShowPortals);
+				portals.forEach(portal => {
+					portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
+					portal.onPlayerExitSignal.add(enqueueShowPortals);
+				});
 				renderPassParams[3] = onBasePrerender.bind(null, portal, params.stencilScene);
 				renderPassParams[4] = onBasePostrender;
 			} else {
 				worldMan.remove(userHead, null, true);
 				worldMan.remove(userHominid, null, true);
 				worldMan.userHead = null;
-				portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
-				portal.onPlayerExitSignal.remove(enqueueShowPortals);
+				portals.forEach(portal => {
+					portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
+					portal.onPlayerExitSignal.remove(enqueueShowPortals);
+				});
 				renderPassParams[3] = onPortaledPrerender.bind(null, portal, params.stencilScene);
 				renderPassParams[4] = onPortaledPostrender;
 			}
@@ -125,24 +134,30 @@ function GraphGarden() {
 		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, viewManager.view.renderer);
 		var stencilScene = new three.Scene();
 
-		var portal = new Portal(new cannon.Vec3(0, 1, 1.5));
-		portal.world = worldManager;
-		worldManager.add(portal);
-		worldManager.portal = portal;
-		
-		var portalMesh = portal.mesh;
-		scene.remove(portalMesh);
-		stencilScene.add(portalMesh);	
-
 		worldManager.name = "world " + (i+1);
 		scene.name = "scene " + (i+1);
-		portal.name = "portal " + (i+1);
 		scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
 		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
+
+		var portals = [];
+		for(var j = -2; j < 2; j+=3) {
+			var portal = new Portal(new cannon.Vec3(j * 2, 1, 1.5));
+			portal.world = worldManager;
+			worldManager.add(portal);
+			worldManager.portal = portal;
+
+			var portalMesh = portal.mesh;
+			scene.remove(portalMesh);
+			stencilScene.add(portalMesh);
+			portal.name = "portal " + (i+1) + "." + (j+1);
+			portals.push(portal);
+		}
+
+
 		passParams.push({
 			worldManager,
 			scene,
-			portal,
+			portals,
 			stencilScene,
 			renderPassParams: [
 				scene, 
@@ -157,7 +172,9 @@ function GraphGarden() {
 	userHead = new UserFpsStandard(scene, masterCamera, inputManager);
 	userHominid = new SimpleHominidBody(scene, masterCamera, inputManager);
 	userHominid.user = userHead;
-
+	for(var j = 0; j < 2; j++) {
+		var portalLink = new PortalLink(passParams[0].portals[j], passParams[1].portals[j]);
+	}
 	setRenderPasses();
 	// swapWorlds();
 	this.widgetFctory = new WidgetFactory();
