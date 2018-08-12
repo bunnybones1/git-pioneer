@@ -1,5 +1,5 @@
-var View = require('threejs-managed-view').View;
-var urlParam = require('urlparam');
+var View = require("threejs-managed-view").View;
+var urlParam = require("urlparam");
 
 function ViewManager() {
 	var view = new View({
@@ -9,7 +9,7 @@ function ViewManager() {
 			preserveDrawingBuffer: false
 		}
 	});
-	view.renderManager.skipFrames = urlParam('skipFrames', 0);
+	view.renderManager.skipFrames = urlParam("skipFrames", 0);
 	this.view = view;
 	// this.scene = view.scene;
 	// this.camera = view.camera;

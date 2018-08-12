@@ -1,4 +1,4 @@
-var Signal = require('signals').Signal;
+var Signal = require("signals").Signal;
 
 function TreeBuilder(app) {
 	this.app = app;

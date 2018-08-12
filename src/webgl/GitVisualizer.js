@@ -1,6 +1,8 @@
 var __geometry;
-var pointOnSphere = require('utils/math/point-on-sphere-fibonacci');
-var SphereGeometry = require('geometry/SphereSimplicialFibonacci');
+var pointOnSphere = require("utils/math/point-on-sphere-fibonacci");
+var SphereGeometry = require("geometry/SphereSimplicialFibonacci");
+var three = require("three");
+
 function __getGeometry() {
 	if(!__geometry) {
 		__geometry = new SphereGeometry(0.5, 100, true);
@@ -11,7 +13,7 @@ var __types = [];
 var __materials = [];
 
 function hashCode(s){
-  return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              
+	return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a;},0);              
 }
 function __getMaterial(type) {
 	if(__types.indexOf(type) === -1) {
@@ -19,14 +21,14 @@ function __getMaterial(type) {
 	}
 	var depth = __types.indexOf(type);
 	if(!__materials[depth]) {
-		var color = new THREE.Color();
+		var color = new three.Color();
 		// color.setHSL((depth/24)%1, 1, 0.75);
 		color.setHSL((hashCode(type)/24)%1, 1, ((hashCode(type)/47)%1) * 0.4 + 0.45);
-		__materials[depth] = new THREE.MeshPhongMaterial({
+		__materials[depth] = new three.MeshPhongMaterial({
 			// wireframe: true,
 			morphTargets: true,
 			color: color,
-			side: THREE.BackSide
+			side: three.BackSide
 			// depthTest: false,
 			// depthWrite: false,
 			// transparent: true
@@ -51,8 +53,8 @@ GitVisualizer.prototype.addNode = function(node, parentNode){
 	this.attempts++;
 	if(this.attempts > nextThresh) {
 		nextThresh *= 1.25;
-		window.document.title = ('nodes: ' + this.attempts + '...');
-		console.log('attempted', this.attempts, 'still working...');
+		window.document.title = ("nodes: " + this.attempts + "...");
+		console.log("attempted", this.attempts, "still working...");
 	}
 	if(this.registered.indexOf(node) !== -1) {
 		this.multiParented++;
@@ -68,9 +70,9 @@ GitVisualizer.prototype.addNode = function(node, parentNode){
 	} else {
 		depth = 0;
 	}
-	var mesh = new THREE.Mesh(__getGeometry(), __getMaterial(node.type));
+	var mesh = new three.Mesh(__getGeometry(), __getMaterial(node.type));
 	mesh.morphTargetInfluences[0] = 0;
-	var attachPoint = new THREE.Object3D();
+	var attachPoint = new three.Object3D();
 	attachPoint.position.y = 1;
 	mesh.add(attachPoint);
 	mesh.attachPoint = attachPoint;
@@ -90,7 +92,7 @@ GitVisualizer.prototype.addNode = function(node, parentNode){
 			parentAttach.rotation.y = Math.PI * 0.5;
 		}
 		var scaleAdjust = Math.sqrt(siblings.length) / 5 * 20;
-		siblings.forEach(function(child, i) {
+		siblings.forEach(function(child) {
 			child.scale.y = scaleAdjust * 0.8;
 			child.attachPoint.scale.y = 1/scaleAdjust;
 			child.morphTargetInfluences[0] = 1 - 1 / scaleAdjust;
@@ -123,16 +125,14 @@ GitVisualizer.prototype.merge = function() {
 		});
 	});
 	// debugger;
-	window.document.title = 'merging ' + nodes + ' nodes';
+	window.document.title = "merging " + nodes + " nodes";
 	var mergedMeshes = [];
 	var chunkLimit = Math.pow(2, 16);
-	var nextChunkSize;
 	var meshesInNextChunk = [];
 	var accumulatedPositionSize;
 	var accumulatedFaceSize;
 	childrenPerMaterials.forEach(function(meshGroup, index){
 		function resetGeometry() {
-			nextChunkSize = 0;
 			meshesInNextChunk.length = 0;
 			accumulatedPositionSize = 0;
 			accumulatedFaceSize = 0;
@@ -140,14 +140,14 @@ GitVisualizer.prototype.merge = function() {
 		}
 		function finalizeGeometry() {
 			if(meshesInNextChunk.length === 0) return;
-			var geometry = new THREE.BufferGeometry();
+			var geometry = new three.BufferGeometry();
 			var indicesBufferArray = new Uint16Array(accumulatedFaceSize * 3);
 			var positionBufferArray = new Float32Array(accumulatedPositionSize * 3);
 			var normalBufferArray = new Float32Array(accumulatedPositionSize * 3);
 			var bufferPositionCursor = 0;
 			var bufferFaceCursor = 0;
 			var faceOffset = 0;
-			var tempVert = new THREE.Vector3();
+			var tempVert = new three.Vector3();
 			meshesInNextChunk.forEach(function(subMesh) {
 				var normals = new Array(subMesh.geometry.vertices.length);
 				for (var i = subMesh.geometry.vertices.length - 1; i >= 0; i--) {
@@ -161,9 +161,9 @@ GitVisualizer.prototype.merge = function() {
 
 				normals = normals.map(function(many) {
 					if(many.length === 0) {
-						throw new Error('How can there be zero normals for this index?');
+						throw new Error("How can there be zero normals for this index?");
 					}
-					var one = new THREE.Vector3();
+					var one = new three.Vector3();
 					for (var i = 0; i < many.length; i++) {
 						one.add(many[i]);
 					}
@@ -193,17 +193,17 @@ GitVisualizer.prototype.merge = function() {
 
 				faceOffset += subMesh.geometry.vertices.length;
 			});
-			geometry.addAttribute('position', new THREE.BufferAttribute(positionBufferArray, 3));
-			geometry.addAttribute('normal', new THREE.BufferAttribute(normalBufferArray, 3));
-			geometry.addAttribute('index', new THREE.BufferAttribute(indicesBufferArray, 1));
-			mergedMeshes.push(new THREE.Mesh(geometry, materials[index]));
+			geometry.addAttribute("position", new three.BufferAttribute(positionBufferArray, 3));
+			geometry.addAttribute("normal", new three.BufferAttribute(normalBufferArray, 3));
+			geometry.addAttribute("index", new three.BufferAttribute(indicesBufferArray, 1));
+			mergedMeshes.push(new three.Mesh(geometry, materials[index]));
 			resetGeometry();
 		}
 		resetGeometry();
 		while(meshGroup.length > 0) {
 			var nextMesh = meshGroup.shift();
 			merged++;
-			window.document.title = 'merging ' + (merged / nodes * 100).toFixed(1) + '%';
+			window.document.title = "merging " + (merged / nodes * 100).toFixed(1) + "%";
 			var meshPostionSize = nextMesh.geometry.vertices.length;
 			if(accumulatedPositionSize + meshPostionSize > chunkLimit) {
 				finalizeGeometry();
@@ -219,9 +219,9 @@ GitVisualizer.prototype.merge = function() {
 };
 
 GitVisualizer.prototype.test = function(total){
-	var rootObj = new THREE.Object3D();
+	var rootObj = new three.Object3D();
 	for (var i = 0; i < total; i++) {
-		var mesh = new THREE.Mesh(__getGeometry(), __getMaterial('normal'));
+		var mesh = new three.Mesh(__getGeometry(), __getMaterial("normal"));
 		rootObj.add(mesh);
 		var longLat = pointOnSphere(i, total*6);
 		mesh.rotation.y = longLat[0];
