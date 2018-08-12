@@ -212,7 +212,9 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 
 	var size = new three.Vector3(1, 1, 1);
+	var debugPhysics = urlParam("debugPhysics", false);
 	function onExitFrame() {
+		if(!debugPhysics) return;
 		world.bodies.forEach(body => {
 			body.shapes.forEach((shape, i) => {
 				if(shape.debugMesh) {

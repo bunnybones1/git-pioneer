@@ -24,11 +24,14 @@ function GraphGarden() {
 	var inputManager = new InputManager(viewManager.canvas);
 	viewManager.view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
 	var onExitFrameOneTimeCallbacks = [];
+	var extraRenderPasses = [];
+	var maxExtraRenderPasses = 2;
 	function onExitFrame() {
 		if(onExitFrameOneTimeCallbacks.length > 0) {
 			onExitFrameOneTimeCallbacks.forEach(cb => cb());
 			onExitFrameOneTimeCallbacks.length = 0;
 		}
+		extraRenderPasses.length = 0;
 	}
 	viewManager.view.renderManager.onExitFrame.add(onExitFrame);
 
@@ -153,7 +156,6 @@ function GraphGarden() {
 			portals.push(portal);
 		}
 
-
 		passParams.push({
 			worldManager,
 			scene,
@@ -172,8 +174,16 @@ function GraphGarden() {
 	userHead = new UserFpsStandard(scene, masterCamera, inputManager);
 	userHominid = new SimpleHominidBody(scene, masterCamera, inputManager);
 	userHominid.user = userHead;
+
+	function onRequestRenderPass(fromPortal) {
+		if(extraRenderPasses.length < maxExtraRenderPasses) {
+			extraRenderPasses.push(fromPortal);
+		}
+	}
+
 	for(var j = 0; j < 2; j++) {
 		var portalLink = new PortalLink(passParams[0].portals[j], passParams[1].portals[j]);
+		portalLink.requestRenderPassSignal.add(onRequestRenderPass);
 	}
 	setRenderPasses();
 	// swapWorlds();
