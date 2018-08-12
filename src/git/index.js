@@ -1,9 +1,8 @@
 var commitLookup = [];
 var commits = [];
-var pairs = [];
 var limit = 200;
-var gitRepoPath = 'unavailable';
-var spawn = require('child_process').spawn;
+var gitRepoPath = "unavailable";
+var spawn = require("child_process").spawn;
 
 function stdInWrapper(uint8Arr) {
 	if(limit > 0){
@@ -21,7 +20,7 @@ function stdInWrapper(uint8Arr) {
 function wrapStdIn(outputMethod) {
 	return function wrappedStdIn(uint8Arr) {
 		outputMethod.call(this, stdInWrapper(uint8Arr));
-	}
+	};
 }
 
 function addNextCommand(command, commandArgs, commitHash) {
@@ -44,7 +43,7 @@ function getCommit(hash) {
 			hash: hash,
 			parents: [],
 			children: []
-		}
+		};
 		if(graphicsApi) {
 			graphicsApi.onCreateHash(commit);
 		}
@@ -89,14 +88,14 @@ function onHashDoFollowParents(dataString) {
 
 var commands = {
 	getHeadHash: {
-		commandTemplate: 'cd %%GIT_REPO_PATH && git rev-parse HEAD',
+		commandTemplate: "cd %%GIT_REPO_PATH && git rev-parse HEAD",
 		getCommand: function() { 
 			return this.commandTemplate.replace("%%GIT_REPO_PATH", gitRepoPath);
 		},
 		onStdIn: wrapStdIn(onHashDoFollowParents)
 	},
 	getParentsOfHash: {
-		commandTemplate: 'cd %%GIT_REPO_PATH && git log --pretty=%P -n 1 %%COMMIT_HASH',
+		commandTemplate: "cd %%GIT_REPO_PATH && git log --pretty=%P -n 1 %%COMMIT_HASH",
 		getCommand: function(hash) { 
 			var commandLine = this.commandTemplate.replace("%%GIT_REPO_PATH", gitRepoPath);
 			commandLine = commandLine.replace("%%COMMIT_HASH", hash);
@@ -120,7 +119,7 @@ function chooseFile(name) {
 }
 
 if(localStorage.repoPath == null) {
-	chooseFile('#fileDialog');
+	chooseFile("#fileDialog");
 } else {
 	initGitRepoPath(localStorage.repoPath);
 }
@@ -136,16 +135,16 @@ function runNextCommand() {
 	var command = commandPack.command;
 	var commandLine = command.getCommand.apply(command, commandPack.commandArgs);
 	var child = spawn(commandLine, [], {shell: true, detached: true});
-	child.stdout.on('data', command.onStdIn.bind(commandPack));
-	child.stderr.on('data', function(data) {
-	    console.log('stderr: ' + data);
-	    //Here is where the error output goes
+	child.stdout.on("data", command.onStdIn.bind(commandPack));
+	child.stderr.on("data", function(data) {
+		console.log("stderr: " + data);
+		//Here is where the error output goes
 	});
-	child.on('close', function(code) {
-	    // console.log('closing code: ' + code);
-	    console.log(commitLookup.length + ' commitLookup');
-	    runNextCommand();
-	    //Here you can get the exit code of the script
+	child.on("close", function(code) {
+		// console.log("closing code: " + code);
+		console.log(commitLookup.length + " commitLookup");
+		runNextCommand();
+		//Here you can get the exit code of the script
 	});
 }
 
@@ -156,4 +155,4 @@ window.gitApiManager = {
 		commits.forEach(graphics.onCreateHash);
 		graphicsApi = graphics;
 	}
-}
+};

@@ -7,7 +7,6 @@ var tools = require("gameObjects/tools");
 var effects = require("gameObjects/effects");
 
 var geomLib = require("geometry/lib");
-var matLib = require("materials/lib");
 var CollisionLayers = require("CollisionLayers");
 
 function WorldManager(canvas, scene, camera, inputManager, renderer) {
