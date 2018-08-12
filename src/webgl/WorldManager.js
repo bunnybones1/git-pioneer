@@ -64,7 +64,9 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			object.body.shapes.forEach(shape => {
 				if(!shape.debugMesh) {
 					var geom = geomLib.sphereHelper(shape.radius, 16);
-					var mat = new three.LineBasicMaterial({wireframe: true, color: color});
+					var mat = new three.LineBasicMaterial({
+						color: color
+					});
 					var mesh = new three.Line(geom, mat);
 					mesh.matrixAutoUpdate = false;
 					shape.debugMesh = mesh;
@@ -165,7 +167,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	var i = 0;
 	for(var tool in tools){
-		add(new tools[tool](this, new cannon.Vec3(i, -6 + Math.random(), 1)));
+		add(new tools[tool](new cannon.Vec3(i, -6 + Math.random(), 1)));
 		i += 2;
 	}
 

@@ -23,22 +23,20 @@ function GraphGarden() {
 
 	var gl = viewManager.view.renderer.context;
 	var glState = viewManager.view.renderer.state;
-	var masterCamera;
-	var masterPortal;
+	var aspect = window.innerWidth / window.innerHeight;
+	var masterCamera = new three.PerspectiveCamera(60, aspect, 0.01, 100);
 	var userHead;
 	var userHominid;
 
 	var passParams = [];
 
-	function onBasePrerender(portal, camera, stencilScene) {
+	function onBasePrerender(portal, stencilScene) {
 		viewManager.view.renderer.clear(false, true, true);
 		viewManager.view.renderer.render(stencilScene, masterCamera);
 		viewManager.view.renderer.clear(false, true, false);
 	}
-	function onPortaledPrerender(portal, camera, stencilScene) {
-		portal.body.position.copy(masterPortal.body.position);
-		camera.matrix.copy(masterCamera.matrixWorld);
-		camera.projectionMatrix.copy(masterCamera.projectionMatrix);
+	function onPortaledPrerender(portal, stencilScene) {
+		// portal.body.position.copy(masterPortal.body.position);
 		viewManager.view.renderer.clear(false, false, true);
 		glState.enable(gl.STENCIL_TEST);
 		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
@@ -76,23 +74,18 @@ function GraphGarden() {
 				params.worldManager.add(userHead);
 				params.worldManager.add(userHominid);
 				params.worldManager.userHead = userHead;
-				userHead.homeWorld = params.worldManager;
 				userHominid.world = params.worldManager;
-				masterCamera = params.camera;
-				masterPortal = params.portal;
-				params.camera.matrixAutoUpdate = true;
-				masterPortal.onPlayerEnterSignal.add(swapWorlds);
-				masterPortal.onPlayerExitSignal.add(showPortals);
-				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.camera, params.stencilScene);
+				params.portal.onPlayerEnterSignal.add(swapWorlds);
+				params.portal.onPlayerExitSignal.add(showPortals);
+				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.stencilScene);
 				params.renderPassParams[4] = onBasePostrender;
 			} else {
 				params.worldManager.remove(userHead);
 				params.worldManager.remove(userHominid);
 				params.worldManager.userHead = null;
-				params.camera.matrixAutoUpdate = false;
 				params.portal.onPlayerEnterSignal.remove(swapWorlds);
 				params.portal.onPlayerExitSignal.remove(showPortals);
-				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.camera, params.stencilScene);
+				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.stencilScene);
 				params.renderPassParams[4] = onPortaledPostrender;
 			}
 			params.renderPassParams[3] = params.renderPassParams[3].decorateBefore(params.worldManager.onEnterFrame).decorateBefore(params.worldManager.simulatePhysics);
@@ -105,10 +98,8 @@ function GraphGarden() {
 	}
 
 	for(var i = 0; i < 2; i++) {
-		var camera = new three.PerspectiveCamera(60, undefined, 0.001, 40);
 		var scene = new three.Scene();
-		scene.add(camera);
-		var worldManager = new WorldManager(viewManager.canvas, scene, camera, inputManager, viewManager.view.renderer);
+		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, viewManager.view.renderer);
 		var stencilScene = new three.Scene();
 		var portal = worldManager.portal;
 		var portalMesh = portal.mesh;
@@ -123,25 +114,20 @@ function GraphGarden() {
 		passParams.push({
 			worldManager,
 			scene,
-			camera,
 			portal,
 			stencilScene,
 			renderPassParams: [
 				scene, 
-				camera,
+				masterCamera,
 				undefined
 			]
 		});
 	}
 	var scene = passParams[0].scene;
-	var camera = passParams[0].camera;
 	var world = passParams[0].worldManager;
 
-	userHead = new UserFpsStandard(scene, camera, inputManager, world);
-	userHead.homeWorld = world;
-	userHead.name = "userHead";
-	userHominid = new SimpleHominidBody(scene, camera, inputManager, world);
-	userHominid.world = world;
+	userHead = new UserFpsStandard(scene, masterCamera, inputManager);
+	userHominid = new SimpleHominidBody(scene, masterCamera, inputManager);
 	userHominid.user = userHead;
 
 	setRenderPasses();
