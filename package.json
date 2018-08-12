@@ -38,6 +38,7 @@
     "three": "^0.94.0",
     "three-bmfont-text": "^2.2.1",
     "threejs-gui-crosshair": "^2.0.0",
+    "threejs-orbitingballs": "^2.0.2",
     "threejs-texture-checkerboard": "^1.0.0",
     "urlparam": "^1.0.2"
   },
