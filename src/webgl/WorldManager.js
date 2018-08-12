@@ -2,11 +2,13 @@ var three = require("three");
 var CheckerboardTexture = require("threejs-texture-checkerboard");
 var cannon = require("cannon");
 var urlParam = require("urlparam");
+var OrbittingBalls = require("threejs-orbitingballs");
 
 var tools = require("gameObjects/tools");
 var effects = require("gameObjects/effects");
 
 var geomLib = require("geometry/lib");
+var matLib = require("materials/lib");
 var CollisionLayers = require("CollisionLayers");
 
 function WorldManager(canvas, scene, camera, inputManager, renderer) {
@@ -194,7 +196,16 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		lastTime = time;
 	}
 
+	var mat = matLib.checkerboards.red();
+	var orbittingballsPivot = new three.Object3D();
+	var orbittingballs = new OrbittingBalls(~~(Math.random() * 100), mat);
+	orbittingballsPivot.position.set(Math.random() * 20 - 10, 0, 1.5);
+	orbittingballsPivot.scale.set(0.2, 0.2, 0.2);
+	orbittingballsPivot.add(orbittingballs);
+	scene.add(orbittingballsPivot);
+
 	function onEnterFrame() {
+		orbittingballs.onEnterFrame();
 		for(var i = 0; i < objects.length; i++) {
 			var object = objects[i];
 			if(object.body) {
@@ -224,6 +235,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		});
 		renderer.render(physicsDebugScene, camera);
 	}
+
 	
 	this.world = world;
 	this.scene = scene;
