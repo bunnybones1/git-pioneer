@@ -1,25 +1,24 @@
-THREE = require('three');
-var three = require('three');
-var cannon = require('cannon');
+window.THREE = require("three");
+var three = require("three");
+var cannon = require("cannon");
 
-var ViewManager = require('./ViewManager');
-var InputManager = require('./InputManager');
-var WorldManager = require('./WorldManager');
-var WidgetFactory = require('./WidgetFactory');
-var GitManager = require('./GitManager');
-var GitVisualizer = require('./GitVisualizer');
-var CodePreviewer = require('./CodePreviewer');
-var CheckerboardTexture = require('threejs-texture-checkerboard');
-var UserFpsStandard = require('gameObjects/UserFpsStandard');
-var SimpleHominidBody = require('gameObjects/SimpleHominidBody');
-var Portal = require('gameObjects/Portal');
-var PortalLink = require('gameObjects/PortalLink');
+var ViewManager = require("./ViewManager");
+var InputManager = require("./InputManager");
+var WorldManager = require("./WorldManager");
+var WidgetFactory = require("./WidgetFactory");
+// var GitManager = require("./GitManager");
+// var GitVisualizer = require("./GitVisualizer");
+// var CodePreviewer = require("./CodePreviewer");
+var CheckerboardTexture = require("threejs-texture-checkerboard");
+var UserFpsStandard = require("gameObjects/UserFpsStandard");
+var SimpleHominidBody = require("gameObjects/SimpleHominidBody");
+var Portal = require("gameObjects/Portal");
+var PortalLink = require("gameObjects/PortalLink");
 
-require('extensions/function');
+require("extensions/function");
 
 
 function GraphGarden() {
-	var _this = this;
 	var viewManager = new ViewManager();
 	var inputManager = new InputManager(viewManager.canvas);
 	viewManager.view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
@@ -96,8 +95,9 @@ function GraphGarden() {
 
 	function setRenderPasses() {
 		viewManager.view.clearRenderPasses();
-		for (var i = (passParams.length - 1); i>=0;i--) {
-			var params = passParams[i];
+		var i, params;
+		for (i = (passParams.length - 1); i>=0 ;i--) {
+			params = passParams[i];
 			var portals = params.portals;
 			var worldMan = params.worldManager;
 			var renderPassParams = params.renderPassParams;
@@ -126,14 +126,15 @@ function GraphGarden() {
 			renderPassParams[3] = renderPassParams[3].decorateBefore(worldMan.onEnterFrame).decorateBefore(worldMan.simulatePhysics);
 			renderPassParams[4] = renderPassParams[4].decorateBefore(worldMan.onExitFrame);
 		}
-		for (var i = 0; i < passParams.length; i++) {
-			var params = passParams[i];
+		for (i = 0; i < passParams.length; i++) {
+			params = passParams[i];
 			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
 		}
 	}
 
+	var scene, j;
 	for(var i = 0; i < 2; i++) {
-		var scene = new three.Scene();
+		scene = new three.Scene();
 		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, viewManager.view.renderer);
 		var stencilScene = new three.Scene();
 
@@ -143,7 +144,7 @@ function GraphGarden() {
 		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
 
 		var portals = [];
-		for(var j = -2; j < 2; j+=3) {
+		for(j = -2; j < 2; j+=3) {
 			var portal = new Portal(new cannon.Vec3(j * 2, 1, 1.5));
 			portal.world = worldManager;
 			worldManager.add(portal);
@@ -168,8 +169,8 @@ function GraphGarden() {
 			]
 		});
 	}
-	var scene = passParams[0].scene;
-	var world = passParams[0].worldManager;
+	
+	scene = passParams[0].scene;
 
 	userHead = new UserFpsStandard(scene, masterCamera, inputManager);
 	userHominid = new SimpleHominidBody(scene, masterCamera, inputManager);
@@ -181,7 +182,7 @@ function GraphGarden() {
 		}
 	}
 
-	for(var j = 0; j < 2; j++) {
+	for(j = 0; j < 2; j++) {
 		var portalLink = new PortalLink(passParams[0].portals[j], passParams[1].portals[j]);
 		portalLink.requestRenderPassSignal.add(onRequestRenderPass);
 	}
