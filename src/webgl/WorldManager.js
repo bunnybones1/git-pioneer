@@ -77,8 +77,12 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		objects.push(object);
 	}
 	var queueToRemove = [];
-	function requestRemove(object, callback) {
-		queueToRemove.push([object, callback]);
+	function requestRemove(object, callback, immediate = false) {
+		if(immediate) {
+			remove(object, callback);
+		} else {
+			queueToRemove.push([object, callback]);
+		}
 	}
 	function requestDestroy(object, callback) {
 		if(object && object.body) {

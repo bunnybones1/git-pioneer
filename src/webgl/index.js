@@ -20,6 +20,14 @@ function GraphGarden() {
 	var viewManager = new ViewManager();
 	var inputManager = new InputManager(viewManager.canvas);
 	viewManager.view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
+	var onExitFrameOneTimeCallbacks = [];
+	function onExitFrame() {
+		if(onExitFrameOneTimeCallbacks.length > 0) {
+			onExitFrameOneTimeCallbacks.forEach(cb => cb());
+			onExitFrameOneTimeCallbacks.length = 0;
+		}
+	}
+	viewManager.view.renderManager.onExitFrame.add(onExitFrame);
 
 	var gl = viewManager.view.renderer.context;
 	var glState = viewManager.view.renderer.state;
@@ -48,8 +56,13 @@ function GraphGarden() {
 	}
 	function onBasePostrender() {
 	}
+
 	function onPortaledPostrender() {
 		glState.disable(gl.STENCIL_TEST);
+	}
+
+	function enqueueSwapWorlds(backwards = false) {
+		onExitFrameOneTimeCallbacks.push(swapWorlds.bind(this, backwards));
 	}
 
 	function swapWorlds(backwards = false) {
@@ -58,6 +71,11 @@ function GraphGarden() {
 		});
 		passParams.swap(0, 1);
 		setRenderPasses();
+	}
+
+
+	function enqueueShowPortals() {
+		onExitFrameOneTimeCallbacks.push(showPortals.bind(this));
 	}
 
 	function showPortals() {
@@ -75,16 +93,16 @@ function GraphGarden() {
 				params.worldManager.add(userHominid);
 				params.worldManager.userHead = userHead;
 				userHominid.world = params.worldManager;
-				params.portal.onPlayerEnterSignal.add(swapWorlds);
-				params.portal.onPlayerExitSignal.add(showPortals);
+				params.portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
+				params.portal.onPlayerExitSignal.add(enqueueShowPortals);
 				params.renderPassParams[3] = onBasePrerender.bind(null, params.portal, params.stencilScene);
 				params.renderPassParams[4] = onBasePostrender;
 			} else {
-				params.worldManager.remove(userHead);
-				params.worldManager.remove(userHominid);
+				params.worldManager.remove(userHead, null, true);
+				params.worldManager.remove(userHominid, null, true);
 				params.worldManager.userHead = null;
-				params.portal.onPlayerEnterSignal.remove(swapWorlds);
-				params.portal.onPlayerExitSignal.remove(showPortals);
+				params.portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
+				params.portal.onPlayerExitSignal.remove(enqueueShowPortals);
 				params.renderPassParams[3] = onPortaledPrerender.bind(null, params.portal, params.stencilScene);
 				params.renderPassParams[4] = onPortaledPostrender;
 			}
