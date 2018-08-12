@@ -1,18 +1,16 @@
-var three = require('three');
-var CheckerboardTexture = require('threejs-texture-checkerboard');
-var cannon = require('cannon');
-var urlParam = require('urlparam');
-var clamp = require('clamp');
-var Signal = require('signals').Signal;
+var three = require("three");
+var CheckerboardTexture = require("threejs-texture-checkerboard");
+var cannon = require("cannon");
+var urlParam = require("urlparam");
 
-var tools = require('gameObjects/tools');
-var effects = require('gameObjects/effects');
+var tools = require("gameObjects/tools");
+var effects = require("gameObjects/effects");
 
-var geomLib = require('geometry/lib');
-var CollisionLayers = require('CollisionLayers');
+var geomLib = require("geometry/lib");
+var CollisionLayers = require("CollisionLayers");
 
 function WorldManager(canvas, scene, camera, inputManager, renderer) {
-	var fog = new THREE.Fog( 0x7f7f7f, camera.near, camera.far);
+	var fog = new three.Fog( 0x7f7f7f, camera.near, camera.far);
 	var physicsDebugScene = new three.Scene();
 	physicsDebugScene.name = "debugPhysics" + Math.random();
 
@@ -41,9 +39,9 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	scene.add(ambient);
 
 	var groundBody = new cannon.Body({
-			mass: 0, // mass == 0 makes the body static
-			collisionFilterGroup: CollisionLayers.ENVIRONMENT,
-			collisionFilterMask: CollisionLayers.PLAYER | CollisionLayers.ITEMS | CollisionLayers.PORTALS
+		mass: 0, // mass == 0 makes the body static
+		collisionFilterGroup: CollisionLayers.ENVIRONMENT,
+		collisionFilterMask: CollisionLayers.PLAYER | CollisionLayers.ITEMS | CollisionLayers.PORTALS
 	});
 	var groundShape = new cannon.Plane();
 
@@ -85,12 +83,11 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 	function requestDestroy(object, callback) {
 		if(object && object.body) {
-			with(object.body) {
-				for(var i = 0; i < shapes.length; i++) {
-					var shape = shapes[i];
-					if(shape.radius > 0) {
-						makeHitEffect(pointToWorldFrame(shapeOffsets[i]), shape.radius, 0.5);
-					}
+			var shapes = object.body.shapes;
+			for(var i = 0; i < shapes.length; i++) {
+				var shape = shapes[i];
+				if(shape.radius > 0) {
+					makeHitEffect(object.body.pointToWorldFrame(object.body.shapeOffsets[i]), shape.radius, 0.5);
 				}
 			}
 		}
@@ -115,7 +112,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	var fixedTimeStep = 1.0 / 60.0; // seconds 
 	var maxSubSteps = 3;
-	 
+	
 	var radius = 0.5; // m 
 	var geometry = geomLib.sphere(radius, 32, 16);
 
@@ -160,10 +157,6 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 		add(hit);
 	}
 
-	function weaponFireMakeBall(pos, userHeadSize) {
-		makeBall(pos.x, pos.y, pos.z, userHeadSize);
-	}
-
 	// userHead.addTool({
 	// 	primaryFireStart: weaponFireMakeBall
 	// });
@@ -179,12 +172,13 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var lastTime;
 	var timeScale;
 	function simulatePhysics(time){
+		var i;
 		if(lastTime === undefined){
 			lastTime = time;
 		}
 		var dt = (time - lastTime) * 0.001;
 		timeScale = Math.min(1 / ((1/60) / dt), 10);
-		for(var i = 0; i < objects.length; i++) {
+		for(i = 0; i < objects.length; i++) {
 			var object = objects[i];
 			if(object.onUpdateSim) object.onUpdateSim(timeScale);
 		}
@@ -192,13 +186,13 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			world.step(fixedTimeStep, dt, maxSubSteps);
 		}
 		if(queueToRemove.length > 0) {
-			for(var i = 0; i < queueToRemove.length; i++) {
+			for(i = 0; i < queueToRemove.length; i++) {
 				remove(queueToRemove[i][0], queueToRemove[i][1]);
 			}
 			queueToRemove.length = 0;
 		}
 		lastTime = time;
-	};
+	}
 
 	function onEnterFrame() {
 		for(var i = 0; i < objects.length; i++) {
