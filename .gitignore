@@ -1,5 +1,6 @@
 bower_components
 node_modules
+!node_modules/three.js
 !src/webgl/node_modules
 *.log
 .DS_Store
