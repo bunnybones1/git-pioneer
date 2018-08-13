@@ -26,13 +26,23 @@ function GitPioneerWebGL() {
 	var onExitFrameOneTimeCallbacks = [];
 	var extraRenderPasses = [];
 	var maxExtraRenderPasses = 2;
+	function onEnterFrame() {
+	}
+
+	var currentWorld;
+
+	var worldsPhysicsProcessed = [];
 	function onExitFrame() {
 		if(onExitFrameOneTimeCallbacks.length > 0) {
 			onExitFrameOneTimeCallbacks.forEach(cb => cb());
 			onExitFrameOneTimeCallbacks.length = 0;
 		}
 		extraRenderPasses.length = 0;
+		view.clearRenderPasses(1);
+		worldsPhysicsProcessed.length = 0;
 	}
+
+	view.renderManager.onEnterFrame.add(onEnterFrame);
 	view.renderManager.onExitFrame.add(onExitFrame);
 
 	var renderer = view.renderer;
@@ -43,155 +53,165 @@ function GitPioneerWebGL() {
 	var userHead;
 	var userHominid;
 
-	var passParams = [];
+	var worlds = [];
 
-	function onBasePrerender(portal, stencilScene) {
+	var stencilScene = new three.Scene();
+	var stencilCamera = new three.PerspectiveCamera();
+	stencilCamera.matrixAutoUpdate = false;
+	stencilScene.add(stencilCamera);
+
+	function onBasePrerender() {
 		renderer.clear(false, true, true);
-		renderer.render(stencilScene, masterCamera);
-		renderer.clear(false, true, false);
 	}
-	function onPortaledPrerender(portal, stencilScene) {
+
+	function onPortaledPrerender(portal) {
+		var origin = portal.mesh.parent;
+		stencilCamera.matrix.copy(masterCamera.matrixWorld);
+		stencilCamera.matrixWorld.copy(masterCamera.matrixWorld);
+		stencilCamera.projectionMatrix.copy(masterCamera.projectionMatrix);
+		stencilScene.add(portal.mesh);
+		portal.portalLink.other(portal).mesh.visible = true;
+		portal.mesh.visible = true;
 		// portal.body.position.copy(masterPortal.body.position);
 		renderer.clear(false, false, true);
 		glState.enable(gl.STENCIL_TEST);
 		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-		renderer.render(stencilScene, masterCamera);
+		renderer.render(stencilScene, stencilCamera);
 		gl.stencilFunc(gl.EQUAL, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
 		renderer.clear(false, true, false);
-	}
-	function onBasePostrender() {
+		stencilScene.remove(portal.mesh);
+		origin.add(portal.mesh);
+		portal.portalLink.other(portal).mesh.visible = false;
+		portal.mesh.visible = false;
 	}
 
-	function onPortaledPostrender() {
+	function onPortaledPostrender(portal) {
+		portal.portalLink.other(portal).mesh.visible = true;
+		portal.mesh.visible = true;
 		glState.disable(gl.STENCIL_TEST);
 	}
 
-	function enqueueSwapWorlds(backwards = false) {
-		onExitFrameOneTimeCallbacks.push(swapWorlds.bind(this, backwards));
+	function enqueueSwapWorlds(portal, backwards = false) {
+		onExitFrameOneTimeCallbacks.push(swapWorlds.bind(this, portal, backwards));
 	}
 
-	function swapWorlds(backwards = false) {
-		passParams.forEach(params => {
-			params.portals.forEach(portal => {
-				portal.mesh.visible = backwards;
-			});
-		});
-		passParams.swap(0, 1);
+	function swapWorlds(portal, backwards = false) {
+		portal.mesh.visible = backwards;
+		portal.portalLink.other(portal).mesh.visible = backwards;
+		worlds.swap(0, 1);
 		setRenderPasses();
 	}
 
 
-	function enqueueShowPortals() {
-		onExitFrameOneTimeCallbacks.push(showPortals.bind(this));
+	function enqueueShowPortals(portal) {
+		onExitFrameOneTimeCallbacks.push(showPortals.bind(this, portal));
 	}
 
-	function showPortals() {
-		passParams.forEach(params => {
-			params.portals.forEach(portal => {
-				portal.mesh.visible = true;
-			});
-		});
+	function showPortals(portal) {
+		portal.mesh.visible = true;
+		portal.portalLink.other(portal).mesh.visible = true;
 	}
 
 	function setRenderPasses() {
-		view.clearRenderPasses();
-		var i, params;
-		for (i = (passParams.length - 1); i>=0 ;i--) {
-			params = passParams[i];
-			var portals = params.portals;
-			var worldMan = params.worldManager;
-			var renderPassParams = params.renderPassParams;
-			if(i==0) {
-				worldMan.add(userHead);
-				worldMan.add(userHominid);
-				worldMan.userHead = userHead;
-				userHominid.world = worldMan;
-				portals.forEach(portal => {
-					portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
-					portal.onPlayerExitSignal.add(enqueueShowPortals);
-				});
-				renderPassParams[3] = onBasePrerender.bind(null, portal, params.stencilScene);
-				renderPassParams[4] = onBasePostrender;
-			} else {
-				worldMan.remove(userHead, null, true);
-				worldMan.remove(userHominid, null, true);
-				worldMan.userHead = null;
-				portals.forEach(portal => {
-					portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
-					portal.onPlayerExitSignal.remove(enqueueShowPortals);
-				});
-				renderPassParams[3] = onPortaledPrerender.bind(null, portal, params.stencilScene);
-				renderPassParams[4] = onPortaledPostrender;
+		view.clearRenderPasses(0);
+		if(currentWorld) {
+			currentWorld.userHead = null;
+			currentWorld.portals.forEach(portal => {
+				portal.onPlayerEnterSignal.remove(enqueueSwapWorlds);
+				portal.onPlayerExitSignal.remove(enqueueShowPortals);
+			});
+			currentWorld.remove(userHead);
+			currentWorld.remove(userHominid);
+		}
+		currentWorld = worlds[0];
+		currentWorld.add(userHead);
+		currentWorld.add(userHominid);
+		currentWorld.userHead = userHead;
+		userHominid.world = currentWorld;
+		currentWorld.portals.forEach(portal => {
+			portal.onPlayerEnterSignal.add(enqueueSwapWorlds);
+			portal.onPlayerExitSignal.add(enqueueShowPortals);
+		});
+
+		addWorldToRender(currentWorld, true);
+	}
+	function addWorldToRender(world, base = false) {
+		var prerender = world.onEnterFrame.decorateBefore(function(time) {
+			if(!worldsPhysicsProcessed.contains(world)) {
+				worldsPhysicsProcessed.push(world);
+				world.simulatePhysics(time);
 			}
-			renderPassParams[3] = renderPassParams[3].decorateBefore(worldMan.onEnterFrame).decorateBefore(worldMan.simulatePhysics);
-			renderPassParams[4] = renderPassParams[4].decorateBefore(worldMan.onExitFrame);
+		});
+		if(base) {
+			prerender = onBasePrerender.decorateBefore(prerender);
 		}
-		for (i = 0; i < passParams.length; i++) {
-			params = passParams[i];
-			view.addRenderPass.apply(view, params.renderPassParams);
-		}
+		view.addRenderPass(
+			world.scene,
+			masterCamera,
+			world.scene.fog.color,
+			prerender, 
+			world.onExitFrame
+		);
 	}
 
-	var scene, j;
+	var j;
 	for(var i = 0; i < 2; i++) {
-		scene = new three.Scene();
-		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, renderer);
-		var stencilScene = new three.Scene();
-
-		worldManager.name = "world " + (i+1);
+		var world = new WorldManager(viewManager.canvas, masterCamera, inputManager, renderer);
+		var scene = world.scene;
+		world.name = "world " + (i+1);
 		scene.name = "scene " + (i+1);
 		scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
 		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
 
 		var portals = [];
+		world.portals = portals;
 		for(j = -2; j < 2; j+=3) {
 			var portal = new Portal(new cannon.Vec3(j * 2, 1, 1.5));
-			portal.world = worldManager;
-			worldManager.add(portal);
-			worldManager.portal = portal;
-
-			var portalMesh = portal.mesh;
-			scene.remove(portalMesh);
-			stencilScene.add(portalMesh);
 			portal.name = "portal " + (i+1) + "." + (j+1);
+			portal.world = world;
+			world.add(portal);
 			portals.push(portal);
 		}
 
-		passParams.push({
-			worldManager,
-			scene,
-			portals,
-			stencilScene,
-			renderPassParams: [
-				scene, 
-				masterCamera,
-				undefined
-			]
-		});
+		worlds.push(world);
 	}
-	
-	scene = passParams[0].scene;
 
-	userHead = new UserFpsStandard(scene, masterCamera, inputManager);
-	userHominid = new SimpleHominidBody(scene, masterCamera, inputManager);
+	userHead = new UserFpsStandard(masterCamera, inputManager);
+	userHominid = new SimpleHominidBody(masterCamera, inputManager);
 	userHominid.user = userHead;
 
 	function onRequestRenderPass(fromPortal) {
 		if(extraRenderPasses.length < maxExtraRenderPasses) {
+			fromPortal.mesh.visible = false;
+			fromPortal.portalLink.other(fromPortal).mesh.visible = false;
 			extraRenderPasses.push(fromPortal);
+			var world = fromPortal.portalLink.other(fromPortal).world;
+			view.addRenderPass(
+				world.scene,
+				masterCamera,
+				undefined,
+				onPortaledPrerender.bind(null, fromPortal).decorateBefore(world.onEnterFrame).decorateBefore(function(time) {
+					if(!worldsPhysicsProcessed.contains(world)) {
+						worldsPhysicsProcessed.push(world);
+						world.simulatePhysics(time);
+					}
+				}),
+				onPortaledPostrender.bind(null, fromPortal).decorateBefore(world.onExitFrame)
+			);
+	
 		}
 	}
 
 	for(j = 0; j < 2; j++) {
-		var portalLink = new PortalLink(passParams[0].portals[j], passParams[1].portals[j]);
+		var portalLink = new PortalLink(worlds[0].portals[j], worlds[1].portals[j]);
 		portalLink.requestRenderPassSignal.add(onRequestRenderPass);
 	}
 	setRenderPasses();
 	// swapWorlds();
 	this.widgetFctory = new WidgetFactory();
-	// this.worldManager.addRelativeToPlayer(this.widgetFctory.makeThing());
+	// this.world.addRelativeToPlayer(this.widgetFctory.makeThing());
 
 	// this.gitManager = new GitManager(this);
 

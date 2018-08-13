@@ -9,7 +9,8 @@ var effects = require("gameObjects/effects");
 var geomLib = require("geometry/lib");
 var CollisionLayers = require("CollisionLayers");
 
-function WorldManager(canvas, scene, camera, inputManager, renderer) {
+function WorldManager(canvas, camera, inputManager, renderer) {
+	var scene = new three.Scene();
 	var fog = new three.Fog( 0x7f7f7f, camera.near, camera.far);
 	var physicsDebugScene = new three.Scene();
 	physicsDebugScene.name = "debugPhysics" + Math.random();
