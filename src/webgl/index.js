@@ -18,10 +18,11 @@ var PortalLink = require("gameObjects/PortalLink");
 require("extensions/function");
 
 
-function GraphGarden() {
+function GitPioneerWebGL() {
 	var viewManager = new ViewManager();
+	var view = viewManager.view;
 	var inputManager = new InputManager(viewManager.canvas);
-	viewManager.view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
+	view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
 	var onExitFrameOneTimeCallbacks = [];
 	var extraRenderPasses = [];
 	var maxExtraRenderPasses = 2;
@@ -32,10 +33,11 @@ function GraphGarden() {
 		}
 		extraRenderPasses.length = 0;
 	}
-	viewManager.view.renderManager.onExitFrame.add(onExitFrame);
+	view.renderManager.onExitFrame.add(onExitFrame);
 
-	var gl = viewManager.view.renderer.context;
-	var glState = viewManager.view.renderer.state;
+	var renderer = view.renderer;
+	var gl = renderer.context;
+	var glState = renderer.state;
 	var aspect = window.innerWidth / window.innerHeight;
 	var masterCamera = new three.PerspectiveCamera(60, aspect, 0.01, 100);
 	var userHead;
@@ -44,20 +46,20 @@ function GraphGarden() {
 	var passParams = [];
 
 	function onBasePrerender(portal, stencilScene) {
-		viewManager.view.renderer.clear(false, true, true);
-		viewManager.view.renderer.render(stencilScene, masterCamera);
-		viewManager.view.renderer.clear(false, true, false);
+		renderer.clear(false, true, true);
+		renderer.render(stencilScene, masterCamera);
+		renderer.clear(false, true, false);
 	}
 	function onPortaledPrerender(portal, stencilScene) {
 		// portal.body.position.copy(masterPortal.body.position);
-		viewManager.view.renderer.clear(false, false, true);
+		renderer.clear(false, false, true);
 		glState.enable(gl.STENCIL_TEST);
 		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-		viewManager.view.renderer.render(stencilScene, masterCamera);
+		renderer.render(stencilScene, masterCamera);
 		gl.stencilFunc(gl.EQUAL, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-		viewManager.view.renderer.clear(false, true, false);
+		renderer.clear(false, true, false);
 	}
 	function onBasePostrender() {
 	}
@@ -94,7 +96,7 @@ function GraphGarden() {
 	}
 
 	function setRenderPasses() {
-		viewManager.view.clearRenderPasses();
+		view.clearRenderPasses();
 		var i, params;
 		for (i = (passParams.length - 1); i>=0 ;i--) {
 			params = passParams[i];
@@ -128,14 +130,14 @@ function GraphGarden() {
 		}
 		for (i = 0; i < passParams.length; i++) {
 			params = passParams[i];
-			viewManager.view.addRenderPass.apply(viewManager.view, params.renderPassParams);
+			view.addRenderPass.apply(view, params.renderPassParams);
 		}
 	}
 
 	var scene, j;
 	for(var i = 0; i < 2; i++) {
 		scene = new three.Scene();
-		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, viewManager.view.renderer);
+		var worldManager = new WorldManager(viewManager.canvas, scene, masterCamera, inputManager, renderer);
 		var stencilScene = new three.Scene();
 
 		worldManager.name = "world " + (i+1);
@@ -198,4 +200,4 @@ function GraphGarden() {
 	// this.gitManager.onNodeSignal.add(this.gitVisualizer.addNode);
 }
 
-module.exports = GraphGarden;
+module.exports = GitPioneerWebGL;

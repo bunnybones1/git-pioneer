@@ -26,11 +26,11 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	scene.add(plane);
 
-	var world = new cannon.World();
-	world.gravity.set(0, 0, -16);
-	world.gravity.w = 0.4;
-	world.broadphase = new cannon.NaiveBroadphase();
-	world.solver.iterations = 10;
+	var physics = new cannon.World();
+	physics.gravity.set(0, 0, -16);
+	physics.gravity.w = 0.4;
+	physics.broadphase = new cannon.NaiveBroadphase();
+	physics.solver.iterations = 10;
 
 	var objects = [];
 
@@ -50,12 +50,12 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 
 	groundShape.material = groundMaterial;
 	groundBody.addShape(groundShape);
-	world.addBody(groundBody);
+	physics.addBody(groundBody);
 
 	function add(object) {
 		scene.add(object.mesh);
 		if(object.body) {
-			world.addBody(object.body);
+			physics.addBody(object.body);
 			var color = new three.Color();
 			color.setHSL(Math.random(), 1, 0.8);
 			object.body.shapes.forEach(shape => {
@@ -100,7 +100,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 				physicsDebugScene.remove(shape.debugMesh);
 			});
 
-			world.removeBody(object.body);
+			physics.removeBody(object.body);
 		}
 		var index = objects.indexOf(object);
 		if(index != -1) {
@@ -183,7 +183,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 			if(object.onUpdateSim) object.onUpdateSim(timeScale);
 		}
 		if(dt > 0) {
-			world.step(fixedTimeStep, dt, maxSubSteps);
+			physics.step(fixedTimeStep, dt, maxSubSteps);
 		}
 		if(queueToRemove.length > 0) {
 			for(i = 0; i < queueToRemove.length; i++) {
@@ -209,7 +209,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	var debugPhysics = urlParam("debugPhysics", false);
 	function onExitFrame() {
 		if(!debugPhysics) return;
-		world.bodies.forEach(body => {
+		physics.bodies.forEach(body => {
 			body.shapes.forEach((shape, i) => {
 				if(shape.debugMesh) {
 					var r = shape.radius;
@@ -226,7 +226,7 @@ function WorldManager(canvas, scene, camera, inputManager, renderer) {
 	}
 
 	
-	this.world = world;
+	this.physics = physics;
 	this.scene = scene;
 
 
