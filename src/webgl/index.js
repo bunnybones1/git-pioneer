@@ -61,10 +61,16 @@ function GitPioneerWebGL() {
 	stencilScene.add(stencilCamera);
 
 	function onBasePrerender() {
+		masterCamera.near = 0.01;
+		masterCamera.updateProjectionMatrix();
 		renderer.clear(false, true, true);
 	}
 
 	function onPortaledPrerender(portal) {
+		var matrix = new three.Matrix4();
+		matrix.getInverse(masterCamera.matrixWorld);
+		masterCamera.near = portal.mesh.position.clone().applyMatrix4(matrix).z * -1 - portal.radius * 0.5;
+		masterCamera.updateProjectionMatrix();
 		var origin = portal.mesh.parent;
 		stencilCamera.matrix.copy(masterCamera.matrixWorld);
 		stencilCamera.matrixWorld.copy(masterCamera.matrixWorld);
