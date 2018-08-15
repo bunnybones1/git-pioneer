@@ -35,6 +35,7 @@
     "nice-color-palettes": "^2.0.0",
     "pointer-trap-relative": "^1.3.0",
     "raf-tweener": "^3.0.4",
+    "three": "git@github.com:bunnybones1/three.js.git#cancellable-renders",
     "three-bmfont-text": "^2.2.1",
     "threejs-gui-crosshair": "^2.0.0",
     "threejs-texture-checkerboard": "^1.0.0",
