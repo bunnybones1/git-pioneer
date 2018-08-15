@@ -170,20 +170,20 @@ function WorldManager(canvas, camera, inputManager, renderer) {
 
 
 	// Start the simulation loop 
-	var lastTime;
-	var timeScale;
+	var lastTimePhysics;
+	var timeScalePhysics;
 	function simulatePhysics(time){
 		var i;
-		if(lastTime === undefined){
-			lastTime = time;
+		if(lastTimePhysics === undefined){
+			lastTimePhysics = time;
 		}
-		var dt = (time - lastTime) * 0.001;
-		timeScale = Math.min(1 / ((1/60) / dt), 10);
-		for(i = 0; i < objects.length; i++) {
-			var object = objects[i];
-			if(object.onUpdateSim) object.onUpdateSim(timeScale);
-		}
+		var dt = (time - lastTimePhysics) * 0.001;
+		timeScalePhysics = Math.min(1 / ((1/60) / dt), 10);
 		if(dt > 0) {
+			for(i = 0; i < objects.length; i++) {
+				var object = objects[i];
+				if(object.onUpdateSim) object.onUpdateSim(timeScalePhysics);
+			}
 			physics.step(fixedTimeStep, dt, maxSubSteps);
 		}
 		if(queueToRemove.length > 0) {
@@ -192,18 +192,28 @@ function WorldManager(canvas, camera, inputManager, renderer) {
 			}
 			queueToRemove.length = 0;
 		}
-		lastTime = time;
+		lastTimePhysics = time;
 	}
 
-	function onEnterFrame() {
-		for(var i = 0; i < objects.length; i++) {
-			var object = objects[i];
-			if(object.body) {
-				object.mesh.position.copy(object.body.position);
-				object.mesh.quaternion.copy(object.body.quaternion);
-			}
-			if(object.onEnterFrame) object.onEnterFrame(timeScale);
+	var lastTimeEnterFrame;
+	var timeScaleEnterFrame;
+	function onEnterFrame(time) {
+		if(lastTimePhysics === undefined){
+			lastTimePhysics = time;
 		}
+		var dt = (time - lastTimeEnterFrame) * 0.001;
+		timeScaleEnterFrame = Math.min(1 / ((1/60) / dt), 10);
+		if(dt > 0) {
+			for(var i = 0; i < objects.length; i++) {
+				var object = objects[i];
+				if(object.body) {
+					object.mesh.position.copy(object.body.position);
+					object.mesh.quaternion.copy(object.body.quaternion);
+				}
+				if(object.onEnterFrame) object.onEnterFrame(timeScaleEnterFrame);
+			}
+		}
+		lastTimeEnterFrame = time;
 	}
 
 	var size = new three.Vector3(1, 1, 1);

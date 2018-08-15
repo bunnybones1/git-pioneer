@@ -25,7 +25,7 @@ function GitPioneerWebGL() {
 	view.renderManager.onEnterFrame.add(inputManager.fpsController.update);
 	var onExitFrameOneTimeCallbacks = [];
 	var extraRenderPasses = [];
-	var maxExtraRenderPasses = 2;
+	var maxExtraRenderPasses = 4;
 	function onEnterFrame() {
 	}
 
