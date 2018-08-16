@@ -3,7 +3,6 @@ var CheckerboardTexture = require("threejs-texture-checkerboard");
 var cannon = require("cannon");
 var urlParam = require("urlparam");
 
-var tools = require("gameObjects/tools");
 var effects = require("gameObjects/effects");
 
 var geomLib = require("geometry/lib");
@@ -17,8 +16,9 @@ function WorldManager(canvas, camera, inputManager, renderer) {
 
 	scene.fog = fog;
 
+	var p = (1 + ~~(Math.random() * 4));
 	var planeMaterial = new three.MeshPhongMaterial({
-		map: new CheckerboardTexture(0x6f4f3f, 0x7f5f4f, 1000, 1000)
+		map: new CheckerboardTexture(0x6f4f3f, 0x7f5f4f, 1000 / p, 1000 / p)
 	});
 	var plane = new three.Mesh(
 		new three.PlaneGeometry(1000, 1000, 1, 1),
@@ -161,13 +161,6 @@ function WorldManager(canvas, camera, inputManager, renderer) {
 	// userHead.addTool({
 	// 	primaryFireStart: weaponFireMakeBall
 	// });
-
-	var i = 0;
-	for(var tool in tools){
-		add(new tools[tool](new cannon.Vec3(i, -6 + Math.random(), 1)));
-		i += 2;
-	}
-
 
 	// Start the simulation loop 
 	var lastTimePhysics;
