@@ -15,6 +15,8 @@ var SimpleHominidBody = require("gameObjects/SimpleHominidBody");
 var Portal = require("gameObjects/Portal");
 var PortalLink = require("gameObjects/PortalLink");
 
+var geomLib = require("geometry/lib");
+var matLib = require("materials/lib");
 var tools = require("gameObjects/tools");
 
 require("extensions/function");
@@ -168,7 +170,7 @@ function GitPioneerWebGL() {
 	}
 
 	var j;
-	var totalPortals = 1;
+	var totalPortals = 0;
 	for(var i = 0; i < 2; i++) {
 		var world = new WorldManager(viewManager.canvas, masterCamera, inputManager, renderer);
 		var scene = world.scene;
@@ -237,6 +239,92 @@ function GitPioneerWebGL() {
 		var portalLink = new PortalLink(worlds[0].portals[j], worlds[1].portals[j]);
 		portalLink.requestRenderPassSignal.add(onRequestRenderPass);
 	}
+
+	var s = toolWorld.scene;
+	var testRadius = 0.3;
+	var testCam1 = new three.PerspectiveCamera(40, 16/9, 0.5, 4);
+	var testCam2 = new three.PerspectiveCamera(40, 16/9, 0.5, 4);
+	testCam2.matrixAutoUpdate = false;
+	testCam1.position.set(1, 0, 1.6);
+	testCam1.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
+	s.add(testCam1);
+	s.add(testCam2);
+	var testCam1Helper = new three.CameraHelper(testCam1);
+	var testCam2Helper = new three.CameraHelper(testCam2);
+	s.add(testCam1Helper);
+	s.add(testCam2Helper);
+	var testSphere = new three.Line(geomLib.sphereHelper(testRadius), matLib.helperLines());
+	var testSphere2 = new three.Line(geomLib.sphereHelper(testRadius*1.01), matLib.helperLines(0x7f7f7f));
+	testSphere.add(testSphere2);
+	testSphere.position.set(-1, 1, 1.6);
+	var frustum = new three.Frustum();
+	var sphere = new three.Sphere(testSphere.position, testSphere.geometry.radius);
+	sphere.center = testSphere.position;
+	var projScreenMatrix = new three.Matrix4();
+	var speed = 0.2;
+	var ss = 500;
+	var ssHalf = ss * 0.5;
+	function sClamp(min, max, value) {
+		return Math.clamp(value, min, max);
+	}
+	var xClamp = sClamp.bind(null, 0, 1920);
+	var yClamp = sClamp.bind(null, 0, 1080);
+	view.renderManager.onEnterFrame.add((t) => {
+		// testCam1.position.y = Math.cos(t * 0.0002);
+		testSphere.position.x = Math.cos(t * 0.0125 * speed) * 1.5 - 2;
+		testSphere.position.z = Math.cos(t * 0.0015 * speed) * 0.5 + 1.6;
+		testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
+		testCam1.updateMatrix();
+		testCam1.updateMatrixWorld();
+
+		projScreenMatrix.multiplyMatrices( testCam1.projectionMatrix, testCam1.matrixWorldInverse );
+		frustum.setFromMatrix( projScreenMatrix );
+
+		testSphere.material.visible = frustum.intersectsSphere(sphere);
+		testCam2Helper.visible = testSphere.material.visible;
+		if(testCam2Helper.visible) {
+			testCam2.matrix.copy(testCam1.matrix);
+			testCam2.matrixWorld.copy(testCam1.matrixWorld);
+			testCam2.projectionMatrix.copy(testCam1.projectionMatrix);
+			var orientedOffset = new three.Vector3(testRadius, 0, 0).applyQuaternion(testCam2.getWorldQuaternion());
+
+			var pos = testSphere.position.clone();
+			pos.applyMatrix4(projScreenMatrix);
+			var offset = testSphere.position.clone().add(orientedOffset);
+			offset.applyMatrix4(projScreenMatrix);
+			ss = offset.sub(pos).length() * 1080 * 2;
+			ssHalf = ss * 0.5;
+			var x = (pos.x*0.5+0.5) * 1920 - ssHalf;
+			var y = (-pos.y*0.5+0.5) * 1080 - ssHalf;
+			var w = ss;
+			var h = ss;
+			if(y + h > 1080) {
+				h = 1080 - y;
+			} else if(y < 0) {
+				h += y;
+			}
+			if(x + w > 1080) {
+				w = 1080 - x;
+			} else if(x < 0) {
+				w += x;
+			}
+
+
+			testCam2.setViewOffset(
+				1920, 
+				1080, 
+				xClamp(x),
+				yClamp(y),
+				w,
+				h
+			);
+			testCam2.updateProjectionMatrix();
+			testCam2Helper.update();
+		}
+
+	});
+	s.add(testSphere);
+	
 	setRenderPasses();
 	// swapWorlds();
 	this.widgetFctory = new WidgetFactory();
