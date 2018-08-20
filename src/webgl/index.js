@@ -242,33 +242,32 @@ function GitPioneerWebGL() {
 
 	var s = toolWorld.scene;
 	var camPool = [];
-	function makeCamCopy(original) {
+	function makeCamera(original) {
 		var clone = camPool.find(cam => {
 			return !cam.helper.visible;
 		});
 		if(!clone) {
-			clone = original.clone();
-			clone.matrixAutoUpdate = false;
+			if(!original) {
+				original = new three.PerspectiveCamera(40, 16/9, 0.5, 4);
+				original.position.set(1, 0, 1.6);
+				original.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
+				clone = original;
+			} else {
+				clone = original.clone();
+				clone.matrixAutoUpdate = false;
+				camPool.push(clone);
+			}
 			var cloneHelper = new three.CameraHelper(clone);
 			clone.helper = cloneHelper;
 			s.add(clone);
 			s.add(cloneHelper);
-			camPool.push(clone);
 		}
-		clone.matrix.copy(testCam1.matrix);
-		clone.matrixWorld.copy(testCam1.matrixWorld);
-		clone.projectionMatrix.copy(testCam1.projectionMatrix);
+		clone.matrix.copy(original.matrix);
+		clone.matrixWorld.copy(original.matrixWorld);
+		clone.projectionMatrix.copy(original.projectionMatrix);
 		return clone;
 	}
-	var testRadius = 0.3;
-	var testCam1 = new three.PerspectiveCamera(40, 16/9, 0.5, 4);
-	testCam1.position.set(1, 0, 1.6);
-	testCam1.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
-	s.add(testCam1);
-	var testCam1Helper = new three.CameraHelper(testCam1);
-	s.add(testCam1Helper);
-	testCam1.helper = testCam1Helper;
-	var testSpheres = [];
+
 	function makeTestSphere(speed) {
 		var testSphere = new three.Line(geomLib.sphereHelper(testRadius), matLib.helperLines().clone());
 		var testSphereIndicator = new three.Line(geomLib.sphereHelper(testRadius*1.01), matLib.helperLines(0x7f7f7f));
@@ -282,10 +281,15 @@ function GitPioneerWebGL() {
 			testSphere.position.x = Math.cos(t * 0.0125 * speed) * 1.5 - 2;
 			testSphere.position.z = Math.cos(t * 0.0015 * speed) * 0.5 + 1.6;
 			testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
+			testSphere.rotation.z += 0.005;
 		};
 		testSpheres.push(testSphere);
 		return testSphere;
 	}
+
+	var testRadius = 0.3;
+	var testCam1 = makeCamera();
+	var testSpheres = [];
 	makeTestSphere(0.2);
 	makeTestSphere(0.3);
 	var frustum = new three.Frustum();
@@ -310,7 +314,7 @@ function GitPioneerWebGL() {
 			var deeper = frustum.intersectsSphere(testSphere.sphere);
 			testSphere.material.visible = deeper;
 			if(deeper) {
-				var testCam2 = makeCamCopy(testCam1);
+				var testCam2 = makeCamera(testCam1);
 				testCam2.helper.visible = testSphere.material.visible;
 				if(testCam2.helper.visible) {
 					testCam2.matrix.copy(testCam1.matrix);
