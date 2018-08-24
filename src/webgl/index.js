@@ -301,6 +301,8 @@ function GitPioneerWebGL() {
 	}
 	var xClamp = sClamp.bind(null, 0, 1920);
 	var yClamp = sClamp.bind(null, 0, 1080);
+	var orientation = new three.Quaternion();
+	var orientedOffset = new three.Vector3();
 	view.renderManager.onEnterFrame.add((t) => {
 		// testCam1.position.y = Math.cos(t * 0.0002);
 		testCam1.updateMatrix();
@@ -320,7 +322,8 @@ function GitPioneerWebGL() {
 					testCam2.matrix.copy(testCam1.matrix);
 					testCam2.matrixWorld.copy(testCam1.matrixWorld);
 					testCam2.projectionMatrix.copy(testCam1.projectionMatrix);
-					var orientedOffset = new three.Vector3(testRadius, 0, 0).applyQuaternion(testCam2.getWorldQuaternion());
+					testCam2.getWorldQuaternion(orientation);
+					orientedOffset.set(testRadius, 0, 0).applyQuaternion(orientation);
 
 					var pos = testSphere.position.clone();
 					pos.applyMatrix4(projScreenMatrix);
