@@ -251,6 +251,7 @@ function GitPioneerWebGL() {
 				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 4);
 				original.position.set(1, 0, 1.6);
 				original.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
+				original.matrixAutoUpdate = false;
 				clone = original;
 			} else {
 				clone = original.clone();
