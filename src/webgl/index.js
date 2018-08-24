@@ -248,7 +248,7 @@ function GitPioneerWebGL() {
 		});
 		if(!clone) {
 			if(!original) {
-				original = new three.PerspectiveCamera(40, 16/9, 0.5, 4);
+				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 4);
 				original.position.set(1, 0, 1.6);
 				original.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
 				clone = original;
@@ -265,7 +265,43 @@ function GitPioneerWebGL() {
 		clone.matrix.copy(original.matrix);
 		clone.matrixWorld.copy(original.matrixWorld);
 		clone.projectionMatrix.copy(original.projectionMatrix);
+		clone.helper.visible = true;
 		return clone;
+	}
+
+	var rect = {
+		x: 0,
+		y: 0,
+		w: 0,
+		h: 0
+	};
+
+	function getSphereRectOnScreen(testSphere, projScreenMatrix) {
+		var pos = testSphere.position.clone();
+		pos.applyMatrix4(projScreenMatrix);
+		var offset = testSphere.position.clone().add(orientedOffset);
+		offset.applyMatrix4(projScreenMatrix);
+		var ss =  offset.sub(pos).length() * window.innerWidth;
+		ssHalf = ss * 0.5;
+		var x = (pos.x*0.5+0.5) * window.innerWidth - ssHalf;
+		var y = (-pos.y*0.5+0.5) * window.innerHeight - ssHalf;
+		var w = ss;
+		var h = ss;
+		if(y + h > window.innerHeight) {
+			h = window.innerHeight - y;
+		} else if(y < 0) {
+			h += y;
+		}
+		if(x + w > window.innerHeight) {
+			w = window.innerHeight - x;
+		} else if(x < 0) {
+			w += x;
+		}
+		rect.x = x;
+		rect.y = y;
+		rect.w = w;
+		rect.h = h;
+		return rect;
 	}
 
 	function makeTestSphere(speed) {
@@ -290,8 +326,9 @@ function GitPioneerWebGL() {
 	var testRadius = 0.3;
 	var testCam1 = makeCamera();
 	var testSpheres = [];
-	makeTestSphere(0.2);
-	makeTestSphere(0.3);
+	var sphere1 = makeTestSphere(0.2);
+	var sphere2 = makeTestSphere(0.3);
+	var sphereLink = new PortalLink(sphere1, sphere2);
 	var frustum = new three.Frustum();
 	var projScreenMatrix = new three.Matrix4();
 	var ss = 500;
@@ -299,8 +336,8 @@ function GitPioneerWebGL() {
 	function sClamp(min, max, value) {
 		return Math.clamp(value, min, max);
 	}
-	var xClamp = sClamp.bind(null, 0, 1920);
-	var yClamp = sClamp.bind(null, 0, 1080);
+	var xClamp = sClamp.bind(null, 0, window.innerWidth);
+	var yClamp = sClamp.bind(null, 0, window.innerHeight);
 	var orientation = new three.Quaternion();
 	var orientedOffset = new three.Vector3();
 	view.renderManager.onEnterFrame.add((t) => {
@@ -316,48 +353,25 @@ function GitPioneerWebGL() {
 			var deeper = frustum.intersectsSphere(testSphere.sphere);
 			testSphere.material.visible = deeper;
 			if(deeper) {
-				var testCam2 = makeCamera(testCam1);
-				testCam2.helper.visible = testSphere.material.visible;
-				if(testCam2.helper.visible) {
-					testCam2.matrix.copy(testCam1.matrix);
-					testCam2.matrixWorld.copy(testCam1.matrixWorld);
-					testCam2.projectionMatrix.copy(testCam1.projectionMatrix);
-					testCam2.getWorldQuaternion(orientation);
-					orientedOffset.set(testRadius, 0, 0).applyQuaternion(orientation);
+				var tempTestCam = makeCamera(testCam1);
+				tempTestCam.matrix.copy(testCam1.matrix);
+				tempTestCam.matrixWorld.copy(testCam1.matrixWorld);
+				tempTestCam.projectionMatrix.copy(testCam1.projectionMatrix);
+				tempTestCam.getWorldQuaternion(orientation);
+				orientedOffset.set(testRadius, 0, 0).applyQuaternion(orientation);
 
-					var pos = testSphere.position.clone();
-					pos.applyMatrix4(projScreenMatrix);
-					var offset = testSphere.position.clone().add(orientedOffset);
-					offset.applyMatrix4(projScreenMatrix);
-					ss = offset.sub(pos).length() * 1080 * 2;
-					ssHalf = ss * 0.5;
-					var x = (pos.x*0.5+0.5) * 1920 - ssHalf;
-					var y = (-pos.y*0.5+0.5) * 1080 - ssHalf;
-					var w = ss;
-					var h = ss;
-					if(y + h > 1080) {
-						h = 1080 - y;
-					} else if(y < 0) {
-						h += y;
-					}
-					if(x + w > 1080) {
-						w = 1080 - x;
-					} else if(x < 0) {
-						w += x;
-					}
+				var rect = getSphereRectOnScreen(testSphere, projScreenMatrix);
 
-
-					testCam2.setViewOffset(
-						1920, 
-						1080, 
-						xClamp(x),
-						yClamp(y),
-						w,
-						h
-					);
-					testCam2.updateProjectionMatrix();
-					testCam2.helper.update();
-				}
+				tempTestCam.setViewOffset(
+					window.innerWidth, 
+					window.innerHeight, 
+					xClamp(rect.x),
+					yClamp(rect.y),
+					rect.w,
+					rect.h
+				);
+				tempTestCam.updateProjectionMatrix();
+				tempTestCam.helper.update();
 			}
 		});
 	});
