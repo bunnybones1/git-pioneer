@@ -266,6 +266,7 @@ function GitPioneerWebGL() {
 		clone.matrix.copy(original.matrix);
 		clone.matrixWorld.copy(original.matrixWorld);
 		clone.projectionMatrix.copy(original.projectionMatrix);
+
 		clone.helper.visible = true;
 		return clone;
 	}
@@ -277,7 +278,9 @@ function GitPioneerWebGL() {
 		h: 0
 	};
 
-	function getSphereRectOnScreen(testSphere, projScreenMatrix) {
+	function getSphereRectOnScreen(testSphere, testCam, projScreenMatrix) {
+		testCam.getWorldQuaternion(orientation);
+		orientedOffset.set(testRadius, 0, 0).applyQuaternion(orientation);
 		var pos = testSphere.position.clone();
 		pos.applyMatrix4(projScreenMatrix);
 		var offset = testSphere.position.clone().add(orientedOffset);
@@ -307,6 +310,7 @@ function GitPioneerWebGL() {
 
 	function makeTestSphere(speed) {
 		var testSphere = new three.Line(geomLib.sphereHelper(testRadius), matLib.helperLines().clone());
+		testSphere.mesh = testSphere;
 		var testSphereIndicator = new three.Line(geomLib.sphereHelper(testRadius*1.01), matLib.helperLines(0x7f7f7f));
 		s.add(testSphere);
 		testSphere.add(testSphereIndicator);
@@ -341,29 +345,36 @@ function GitPioneerWebGL() {
 	var yClamp = sClamp.bind(null, 0, window.innerHeight);
 	var orientation = new three.Quaternion();
 	var orientedOffset = new three.Vector3();
+	var prerenderQueue = [];
+	var depthLimit = 6;
 	view.renderManager.onEnterFrame.add((t) => {
 		// testCam1.position.y = Math.cos(t * 0.0002);
+		testSpheres.forEach(testSphere => {
+			testSphere.onEnterFrame(t);
+		});
+
 		testCam1.updateMatrix();
 		testCam1.updateMatrixWorld();
-		projScreenMatrix.multiplyMatrices( testCam1.projectionMatrix, testCam1.matrixWorldInverse );
+		prerenderQueue.push(testCam1);
+		for(var i = 0; i < prerenderQueue.length && i < depthLimit; i++) {
+			processPrerenderQueue(prerenderQueue[i]);
+		}
+		prerenderQueue.length = 0;
+	});
+
+	function processPrerenderQueue(testCam) {
+		projScreenMatrix.multiplyMatrices( testCam.projectionMatrix, testCam.matrixWorldInverse );
 		frustum.setFromMatrix( projScreenMatrix );
 		
 		testSpheres.forEach(testSphere => {
-			testSphere.onEnterFrame(t);
-
 			var deeper = frustum.intersectsSphere(testSphere.sphere);
 			testSphere.material.visible = deeper;
 			if(deeper) {
-				var tempTestCam = makeCamera(testCam1);
-				tempTestCam.matrix.copy(testCam1.matrix);
-				tempTestCam.matrixWorld.copy(testCam1.matrixWorld);
-				tempTestCam.projectionMatrix.copy(testCam1.projectionMatrix);
-				tempTestCam.getWorldQuaternion(orientation);
-				orientedOffset.set(testRadius, 0, 0).applyQuaternion(orientation);
+				var camThatSeesPortal = makeCamera(testCam);
 
-				var rect = getSphereRectOnScreen(testSphere, projScreenMatrix);
+				var rect = getSphereRectOnScreen(testSphere, camThatSeesPortal, projScreenMatrix);
 
-				tempTestCam.setViewOffset(
+				camThatSeesPortal.setViewOffset(
 					window.innerWidth, 
 					window.innerHeight, 
 					xClamp(rect.x),
@@ -371,11 +382,15 @@ function GitPioneerWebGL() {
 					rect.w,
 					rect.h
 				);
-				tempTestCam.updateProjectionMatrix();
-				tempTestCam.helper.update();
+				camThatSeesPortal.updateProjectionMatrix();
+				camThatSeesPortal.helper.update();
+				var camThroughPortal = makeCamera(camThatSeesPortal);
+				var deltaMatrix = testSphere.portalLink.getDeltaMatrix(testSphere);
+				camThroughPortal.matrixWorld.premultiply(deltaMatrix);
+				camThroughPortal.helper.update();
 			}
 		});
-	});
+	}
 	
 	view.renderManager.onExitFrame.add((t) => {
 		camPool.forEach(cam => cam.helper.visible = false);
