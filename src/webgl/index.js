@@ -255,10 +255,10 @@ function GitPioneerWebGL() {
 				clone = original;
 			} else {
 				clone = original.clone();
-				clone.matrixAutoUpdate = false;
 				camPool.push(clone);
 			}
 			var cloneHelper = new three.CameraHelper(clone);
+			cloneHelper.matrixAutoUpdate = false;
 			clone.helper = cloneHelper;
 			s.add(clone);
 			s.add(cloneHelper);
@@ -309,6 +309,7 @@ function GitPioneerWebGL() {
 	}
 
 	function makeTestSphere(speed) {
+		speed *= 0.1;
 		var testSphere = new three.Line(geomLib.sphereHelper(testRadius), matLib.helperLines().clone());
 		testSphere.mesh = testSphere;
 		var testSphereIndicator = new three.Line(geomLib.sphereHelper(testRadius*1.01), matLib.helperLines(0x7f7f7f));
@@ -322,7 +323,7 @@ function GitPioneerWebGL() {
 			testSphere.position.x = Math.cos(t * 0.0125 * speed) * 1.5 - 2;
 			testSphere.position.z = Math.cos(t * 0.0015 * speed) * 0.5 + 1.6;
 			testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
-			testSphere.rotation.z += 0.005;
+			// testSphere.rotation.z += 0.05 * speed;
 		};
 		testSpheres.push(testSphere);
 		return testSphere;
@@ -382,11 +383,21 @@ function GitPioneerWebGL() {
 					rect.w,
 					rect.h
 				);
+				
 				camThatSeesPortal.updateProjectionMatrix();
+				camThatSeesPortal.helper.matrixWorld.copy(camThatSeesPortal.matrixWorld);
 				camThatSeesPortal.helper.update();
 				var camThroughPortal = makeCamera(camThatSeesPortal);
-				var deltaMatrix = testSphere.portalLink.getDeltaMatrix(testSphere);
-				camThroughPortal.matrixWorld.premultiply(deltaMatrix);
+				var clipSpaceCoord = testSphere.position.clone();
+				var mat = new three.Matrix4();
+				mat.getInverse(camThatSeesPortal.matrixWorld);
+				clipSpaceCoord.applyMatrix4(mat);
+				camThatSeesPortal.near = Math.max(-clipSpaceCoord.z, -camThatSeesPortal.far);
+
+				// camThatSeesPortal.updateProjectionMatrix();
+				var deltaMatrix = sphereLink.getDeltaMatrix(testSphere);
+				camThroughPortal.matrix.premultiply(deltaMatrix);
+				camThroughPortal.helper.matrix.copy(camThroughPortal.matrix);
 				camThroughPortal.helper.update();
 			}
 		});
