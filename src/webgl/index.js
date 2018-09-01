@@ -42,7 +42,7 @@ function GitPioneerWebGL() {
 			onExitFrameOneTimeCallbacks.length = 0;
 		}
 		extraRenderPasses.length = 0;
-		view.clearRenderPasses(1);
+		// view.clearRenderPasses(1);
 		worldsPhysicsProcessed.length = 0;
 	}
 
@@ -176,7 +176,7 @@ function GitPioneerWebGL() {
 		var scene = world.scene;
 		world.name = "world " + (i+1);
 		scene.name = "scene " + (i+1);
-		scene.fog.color.setHex(i == 0 ? 0xff7f00 : 0x007fff);
+		scene.fog.color.setHex(i == 0 ? 0x2f3f4f : 0x007fff);
 		scene.background = new CheckerboardTexture(scene.fog.color, scene.fog.color, 4, 4);
 
 		var portals = [];
@@ -240,15 +240,20 @@ function GitPioneerWebGL() {
 		portalLink.requestRenderPassSignal.add(onRequestRenderPass);
 	}
 
+	setRenderPasses();
+
 	var s = toolWorld.scene;
 	var camPool = [];
-	function makeCamera(original) {
+	function makeCamera(original, color = 0xffffff) {
+		if(typeof color != three.Color) {
+			color = new three.Color(color);
+		}
 		var clone = camPool.find(cam => {
 			return !cam.helper.visible;
 		});
 		if(!clone) {
 			if(!original) {
-				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 4);
+				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 12);
 				original.position.set(1, 0, 1.6);
 				original.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
 				original.matrixAutoUpdate = false;
@@ -258,6 +263,7 @@ function GitPioneerWebGL() {
 				camPool.push(clone);
 			}
 			var cloneHelper = new three.CameraHelper(clone);
+			cloneHelper.material.color.copy(color);
 			cloneHelper.matrixAutoUpdate = false;
 			clone.helper = cloneHelper;
 			s.add(clone);
@@ -272,11 +278,21 @@ function GitPioneerWebGL() {
 	}
 
 	var rect = {
-		x: 0,
-		y: 0,
-		w: 0,
-		h: 0
+		offsetX: 0,
+		offsetY: 0,
+		width: 0,
+		height: 0,
 	};
+	rect.smallestIntersection = function smallestIntersection(other) {
+		var left = Math.max(this.offsetX, other.offsetX);
+		var right = Math.min(this.offsetX + this.width, other.offsetX + other.width);
+		var top = Math.max(this.offsetY, other.offsetY);
+		var bottom = Math.min(this.offsetY + this.height, other.offsetY + other.height);
+		this.offsetX = left;
+		this.offsetY = top;
+		this.width = Math.max(0, right - left);
+		this.height = Math.max(0, bottom - top);
+	}.bind(rect);
 
 	function getSphereRectOnScreen(testSphere, testCam, projScreenMatrix) {
 		testCam.getWorldQuaternion(orientation);
@@ -296,15 +312,15 @@ function GitPioneerWebGL() {
 		} else if(y < 0) {
 			h += y;
 		}
-		if(x + w > window.innerHeight) {
-			w = window.innerHeight - x;
+		if(x + w > window.innerWidth) {
+			w = window.innerWidth - x;
 		} else if(x < 0) {
 			w += x;
 		}
-		rect.x = x;
-		rect.y = y;
-		rect.w = w;
-		rect.h = h;
+		rect.offsetX = xClamp(x);
+		rect.offsetY = yClamp(y);
+		rect.width = w;
+		rect.height = h;
 		return rect;
 	}
 
@@ -321,9 +337,9 @@ function GitPioneerWebGL() {
 		testSphere.sphere = sphere;
 		testSphere.onEnterFrame = (t) => {
 			testSphere.position.x = Math.cos(t * 0.0125 * speed) * 1.5 - 2;
-			testSphere.position.z = Math.cos(t * 0.0015 * speed) * 0.5 + 1.6;
+			testSphere.position.z = Math.cos(t * 0.005 * speed) * 0.15 + 1.6;
 			testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
-			// testSphere.rotation.z += 0.05 * speed;
+			testSphere.rotation.z = Math.cos(t * 0.05 * speed);
 		};
 		testSpheres.push(testSphere);
 		return testSphere;
@@ -331,6 +347,22 @@ function GitPioneerWebGL() {
 
 	var testRadius = 0.3;
 	var testCam1 = makeCamera();
+	var renderTargetTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+		generateMipmaps: false
+	});
+	view.addRenderPass(
+		s,
+		testCam1,
+		0xffffff,
+		(t) => {
+			previewMesh.visible = false;
+		},
+		(t) => {
+			previewMesh.visible = true;
+		},
+		renderTargetTexture
+	);
+
 	var testSpheres = [];
 	var sphere1 = makeTestSphere(0.2);
 	var sphere2 = makeTestSphere(0.3);
@@ -348,8 +380,22 @@ function GitPioneerWebGL() {
 	var orientedOffset = new three.Vector3();
 	var prerenderQueue = [];
 	var depthLimit = 6;
-	view.renderManager.onEnterFrame.add((t) => {
-		// testCam1.position.y = Math.cos(t * 0.0002);
+	var previewMesh = new three.Mesh(
+		new three.PlaneGeometry(1, 1, 1, 1),
+		new three.MeshBasicMaterial({
+			map: renderTargetTexture.texture,
+			// wireframe: true
+		})
+	);
+	previewMesh.scale.set(1, 1 * window.innerHeight / window.innerWidth, 1);
+	previewMesh.position.set(0, 4, 1);
+	previewMesh.rotation.set(Math.PI * 0.65, Math.PI, 0);
+
+	s.add(previewMesh);
+
+	view.renderManager.onEnterFrame.add( t => {
+		testCam1.position.y = Math.cos(t * 0.0002);
+		// testCam1.rotation.y = Math.cos(t * 0.002) + Math.PI * 0.5;
 		testSpheres.forEach(testSphere => {
 			testSphere.onEnterFrame(t);
 		});
@@ -358,47 +404,75 @@ function GitPioneerWebGL() {
 		testCam1.updateMatrixWorld();
 		prerenderQueue.push(testCam1);
 		for(var i = 0; i < prerenderQueue.length && i < depthLimit; i++) {
-			processPrerenderQueue(prerenderQueue[i]);
+			processPrerenderQueue(prerenderQueue[i], i);
 		}
 		prerenderQueue.length = 0;
 	});
 
-	function processPrerenderQueue(testCam) {
+	// view.renderManager.onExitRender.add( t => {
+	// 	view.clearRenderPasses(1);
+	// });
+
+	function processPrerenderQueue(testCam, i) {
 		projScreenMatrix.multiplyMatrices( testCam.projectionMatrix, testCam.matrixWorldInverse );
 		frustum.setFromMatrix( projScreenMatrix );
 		
-		testSpheres.forEach(testSphere => {
+		testSpheres.forEach((testSphere, j) => {
+			if(testSphere == testCam.parentPortal) {
+				return;
+			}
 			var deeper = frustum.intersectsSphere(testSphere.sphere);
 			testSphere.material.visible = deeper;
 			if(deeper) {
-				var camThatSeesPortal = makeCamera(testCam);
+				var seeColor = new three.Color();
+				seeColor.setHSL((i + j / 2)/4, 1, 0.5);
+				var camThatSeesPortal = makeCamera(testCam, seeColor);
 
 				var rect = getSphereRectOnScreen(testSphere, camThatSeesPortal, projScreenMatrix);
+
+				if(testCam.view) {
+					rect.smallestIntersection(testCam.view);
+				}
+				if(rect.width == 0 || rect.height == 0) return;
 
 				camThatSeesPortal.setViewOffset(
 					window.innerWidth, 
 					window.innerHeight, 
-					xClamp(rect.x),
-					yClamp(rect.y),
-					rect.w,
-					rect.h
+					rect.offsetX,
+					rect.offsetY,
+					rect.width,
+					rect.height
 				);
+				//TODO crop next rect by last rect
 				
 				camThatSeesPortal.updateProjectionMatrix();
 				camThatSeesPortal.helper.matrixWorld.copy(camThatSeesPortal.matrixWorld);
 				camThatSeesPortal.helper.update();
-				var camThroughPortal = makeCamera(camThatSeesPortal);
 				var clipSpaceCoord = testSphere.position.clone();
 				var mat = new three.Matrix4();
 				mat.getInverse(camThatSeesPortal.matrixWorld);
 				clipSpaceCoord.applyMatrix4(mat);
 				camThatSeesPortal.near = Math.max(-clipSpaceCoord.z, -camThatSeesPortal.far);
+				camThatSeesPortal.updateProjectionMatrix();
 
 				// camThatSeesPortal.updateProjectionMatrix();
+				var throughColor = new three.Color();
+				throughColor.setHSL((i + j / 2)/4, 1, 0.75);
+				var camThroughPortal = makeCamera(camThatSeesPortal, throughColor);
 				var deltaMatrix = sphereLink.getDeltaMatrix(testSphere);
 				camThroughPortal.matrix.premultiply(deltaMatrix);
+				camThroughPortal.setViewOffset(
+					window.innerWidth, 
+					window.innerHeight, 
+					rect.offsetX,
+					rect.offsetY,
+					rect.width,
+					rect.height
+				);
 				camThroughPortal.helper.matrix.copy(camThroughPortal.matrix);
 				camThroughPortal.helper.update();
+				camThroughPortal.parentPortal = testSphere;
+				prerenderQueue.push(camThroughPortal);
 			}
 		});
 	}
@@ -407,7 +481,6 @@ function GitPioneerWebGL() {
 		camPool.forEach(cam => cam.helper.visible = false);
 	});
 
-	setRenderPasses();
 	// swapWorlds();
 	this.widgetFctory = new WidgetFactory();
 	// this.world.addRelativeToPlayer(this.widgetFctory.makeThing());
