@@ -350,18 +350,27 @@ function GitPioneerWebGL() {
 	var renderTargetTexture = new three.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
 		generateMipmaps: false
 	});
-	view.addRenderPass(
-		s,
-		testCam1,
-		0xffffff,
-		(t) => {
-			previewMesh.visible = false;
-		},
-		(t) => {
-			previewMesh.visible = true;
-		},
-		renderTargetTexture
-	);
+	function addPortalPass(cam) { 
+		view.addRenderPass(
+			s,
+			cam,
+			undefined,
+			(t) => {
+				if(cam.view) {
+					renderTargetTexture.viewport.x = cam.view.offsetX;
+					renderTargetTexture.viewport.y = cam.view.offsetY;
+					renderTargetTexture.viewport.z = cam.view.width;
+					renderTargetTexture.viewport.w = cam.view.height;
+				}
+				previewMesh.visible = false;
+			},
+			(t) => {
+				previewMesh.visible = true;
+			},
+			renderTargetTexture
+		);
+	}
+
 
 	var testSpheres = [];
 	var sphere1 = makeTestSphere(0.2);
@@ -379,7 +388,9 @@ function GitPioneerWebGL() {
 	var orientation = new three.Quaternion();
 	var orientedOffset = new three.Vector3();
 	var prerenderQueue = [];
-	var depthLimit = 6;
+	var renderQueue = [];
+	var depthLimit = 2;
+	var renderLimit = 10;
 	var previewMesh = new three.Mesh(
 		new three.PlaneGeometry(1, 1, 1, 1),
 		new three.MeshBasicMaterial({
@@ -407,15 +418,22 @@ function GitPioneerWebGL() {
 			processPrerenderQueue(prerenderQueue[i], i);
 		}
 		prerenderQueue.length = 0;
+
+		for(var i = 0; i < renderQueue.length && i < renderLimit; i++) {
+			processRenderQueue(renderQueue[i], i);
+		}
+		renderQueue.length = 0;
+
 	});
 
-	// view.renderManager.onExitRender.add( t => {
-	// 	view.clearRenderPasses(1);
-	// });
+	view.renderManager.onExitRender.add( t => {
+		view.clearRenderPasses(1);
+	});
 
 	function processPrerenderQueue(testCam, i) {
 		projScreenMatrix.multiplyMatrices( testCam.projectionMatrix, testCam.matrixWorldInverse );
 		frustum.setFromMatrix( projScreenMatrix );
+		renderQueue.push(testCam);
 		
 		testSpheres.forEach((testSphere, j) => {
 			if(testSphere == testCam.parentPortal) {
@@ -455,6 +473,7 @@ function GitPioneerWebGL() {
 				camThatSeesPortal.near = Math.max(-clipSpaceCoord.z, -camThatSeesPortal.far);
 				camThatSeesPortal.updateProjectionMatrix();
 
+
 				// camThatSeesPortal.updateProjectionMatrix();
 				var throughColor = new three.Color();
 				throughColor.setHSL((i + j / 2)/4, 1, 0.75);
@@ -475,6 +494,10 @@ function GitPioneerWebGL() {
 				prerenderQueue.push(camThroughPortal);
 			}
 		});
+	}
+
+	function processRenderQueue(camera, i) {
+		addPortalPass(camera);
 	}
 	
 	view.renderManager.onExitFrame.add((t) => {
