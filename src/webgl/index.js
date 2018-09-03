@@ -253,7 +253,7 @@ function GitPioneerWebGL() {
 		});
 		if(!clone) {
 			if(!original) {
-				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 12);
+				original = new three.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.5, 50);
 				original.position.set(1, 0, 1.6);
 				original.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
 				original.matrixAutoUpdate = false;
@@ -331,15 +331,17 @@ function GitPioneerWebGL() {
 		var testSphereIndicator = new three.Line(geomLib.sphereHelper(testRadius*1.01), matLib.helperLines(0x7f7f7f));
 		s.add(testSphere);
 		testSphere.add(testSphereIndicator);
-		testSphere.position.set(-1, 1, 1.6);
+		testSphere.position.set(-1, 0, 1.6);
 		var sphere = new three.Sphere(testSphere.position, testSphere.geometry.radius);
 		sphere.center = testSphere.position;
 		testSphere.sphere = sphere;
 		testSphere.onEnterFrame = (t) => {
 			testSphere.position.x = Math.cos(t * 0.0125 * speed) * 1.5 - 2;
-			testSphere.position.z = Math.cos(t * 0.005 * speed) * 0.15 + 1.6;
-			testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
-			testSphere.rotation.z = Math.cos(t * 0.05 * speed);
+			// testSphere.position.z = Math.cos(t * 0.005 * speed) * 0.15 + 1.6;
+			// testSphere.position.y = Math.cos(t * 0.001 * speed) * 0.2;
+			testSphere.rotation.x = Math.cos(t * 0.03 * speed) * 0.03;
+			testSphere.rotation.z = Math.cos(t * 0.04 * speed) * 0.03;
+			testSphere.rotation.y = Math.cos(t * 0.05 * speed) * 0.03;
 		};
 		testSpheres.push(testSphere);
 		return testSphere;
@@ -358,10 +360,17 @@ function GitPioneerWebGL() {
 			(t) => {
 				if(cam.view) {
 					renderTargetTexture.viewport.x = cam.view.offsetX;
-					renderTargetTexture.viewport.y = cam.view.offsetY;
+					renderTargetTexture.viewport.y = window.innerHeight - cam.view.offsetY - cam.view.height;
 					renderTargetTexture.viewport.z = cam.view.width;
 					renderTargetTexture.viewport.w = cam.view.height;
+				} else {
+					renderTargetTexture.viewport.x = 0;
+					renderTargetTexture.viewport.y = 0;
+					renderTargetTexture.viewport.z = window.innerWidth;
+					renderTargetTexture.viewport.w = window.innerHeight;
 				}
+				renderer.clear(false, true, true);
+				
 				previewMesh.visible = false;
 			},
 			(t) => {
@@ -375,6 +384,7 @@ function GitPioneerWebGL() {
 	var testSpheres = [];
 	var sphere1 = makeTestSphere(0.2);
 	var sphere2 = makeTestSphere(0.3);
+	sphere2.position.x++;
 	var sphereLink = new PortalLink(sphere1, sphere2);
 	var frustum = new three.Frustum();
 	var projScreenMatrix = new three.Matrix4();
@@ -389,8 +399,8 @@ function GitPioneerWebGL() {
 	var orientedOffset = new three.Vector3();
 	var prerenderQueue = [];
 	var renderQueue = [];
-	var depthLimit = 2;
-	var renderLimit = 10;
+	var depthLimit = 12;
+	var renderLimit = 12;
 	var previewMesh = new three.Mesh(
 		new three.PlaneGeometry(1, 1, 1, 1),
 		new three.MeshBasicMaterial({
@@ -405,8 +415,10 @@ function GitPioneerWebGL() {
 	s.add(previewMesh);
 
 	view.renderManager.onEnterFrame.add( t => {
-		testCam1.position.y = Math.cos(t * 0.0002);
-		// testCam1.rotation.y = Math.cos(t * 0.002) + Math.PI * 0.5;
+		// testCam1.position.y = Math.cos(t * 0.0002);
+		// testCam1.rotation.y = Math.cos(t * 0.02) * 0.05 + Math.PI * 0.5;
+		// testCam1.rotation.x = Math.cos(t * 0.012) * 0.15 + Math.PI * 0.5;
+		// testCam1.rotation.z = Math.cos(t * 0.012) * 0.015;
 		testSpheres.forEach(testSphere => {
 			testSphere.onEnterFrame(t);
 		});
@@ -490,7 +502,7 @@ function GitPioneerWebGL() {
 				);
 				camThroughPortal.helper.matrix.copy(camThroughPortal.matrix);
 				camThroughPortal.helper.update();
-				camThroughPortal.parentPortal = testSphere;
+				camThroughPortal.parentPortal = testSphere.portalLink.other(testSphere);
 				prerenderQueue.push(camThroughPortal);
 			}
 		});
