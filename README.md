@@ -1,6 +1,6 @@
 # git-pioneer
-An experimental tool to visualize git. Built with threejs and NW.js.
-Currently only developed on OSX so windows development will require extra unknown work.
+An experimental tool to visualize git, but let's be honest, mostly to play around with portals. Built with threejs.
+Currently developed mostly on OSX, but windows 10 development seems to work well.
 
 ## Setup
 `npm i`
